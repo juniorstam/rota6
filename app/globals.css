@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 html {
@@ -16,8 +16,9 @@ body {
     "Segoe UI",
     sans-serif;
   background:
-    radial-gradient(circle at top, rgba(245, 158, 11, 0.08), transparent 24%),
-    linear-gradient(180deg, #090b10 0%, #0d1219 100%);
+    radial-gradient(circle at top left, rgba(249, 115, 22, 0.12), transparent 24%),
+    radial-gradient(circle at top right, rgba(15, 23, 42, 0.08), transparent 22%),
+    linear-gradient(180deg, #f8fafc 0%, #f3f4f6 100%);
 }
 
 h1,
@@ -33,7 +34,7 @@ h4 {
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #334155 #0f172a;
+  scrollbar-color: #cbd5e1 #eef2f7;
 }
 
 ::-webkit-scrollbar {
@@ -42,10 +43,10 @@ h4 {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #cbd5e1;
   border-radius: 999px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: #eef2f7;
 }

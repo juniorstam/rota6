@@ -8,6 +8,7 @@ import { followingByUserId, users } from "@/lib/mock-data";
 interface FollowingContextValue {
   currentUserId: string;
   followingIds: string[];
+  followingMap: FollowingState;
   isFollowing: (targetUserId: string) => boolean;
   toggleFollowing: (targetUserId: string) => void;
 }
@@ -26,6 +27,7 @@ export function FollowingProvider({ children }: { children: React.ReactNode }) {
     () => ({
       currentUserId,
       followingIds: state[currentUserId] ?? [],
+      followingMap: state,
       isFollowing(targetUserId) {
         return (state[currentUserId] ?? []).includes(targetUserId);
       },

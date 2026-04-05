@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Map, ShieldCheck } from "lucide-react";
+import { Map } from "lucide-react";
 
 import { AvatarMenu } from "@/components/avatar-menu";
 
@@ -15,7 +15,6 @@ export function Header() {
           </div>
           <div>
             <p className="text-sm font-medium uppercase tracking-[0.28em] text-accentSoft">Rota 6</p>
-            <p className="text-xs text-muted">Seu radar de estrada para viajar melhor de moto</p>
           </div>
         </Link>
 
@@ -23,8 +22,6 @@ export function Header() {
           <Link href="/">Início</Link>
           <Link href="/explorar">Explorar</Link>
           <Link href="/bikers">Bikers</Link>
-          <Link href="/planejar">Planejar</Link>
-          <Link href="/favoritos">Favoritos</Link>
         </nav>
 
         <div className="flex items-center gap-2">
@@ -32,19 +29,11 @@ export function Header() {
             href="/planejar"
             className="hidden rounded-full border border-accent/40 bg-accent px-4 py-2 text-sm font-semibold text-background md:inline-flex"
           >
-            Abrir planejador
+            Planejar viagens
           </Link>
 
           <AvatarMenu />
         </div>
-      </div>
-
-      <div className="mx-auto hidden max-w-7xl px-4 pb-3 text-xs text-muted md:flex md:items-center md:gap-5 md:px-6">
-        <span className="inline-flex items-center gap-1">
-          <ShieldCheck size={14} />
-          recomendações feitas por quem realmente roda
-        </span>
-        <span>rota, apoio na estrada e inteligência coletiva no mesmo lugar</span>
       </div>
     </header>
   );

@@ -11,6 +11,7 @@ import { BikerCard } from "@/components/biker-card";
 import { UserProfileHeader } from "@/components/user-profile-header";
 import { Place, PublishedTrip, UserProfile } from "@/lib/types";
 import { useFollowing } from "@/providers/following-provider";
+import { users } from "@/lib/mock-data";
 
 export function ProfilePageClient({
   profile,
@@ -27,11 +28,12 @@ export function ProfilePageClient({
     user: UserProfile;
     tripCount: number;
     photoCount: number;
-    previewTrip?: PublishedTrip;
   }>;
 }) {
-  const { currentUserId, followingIds } = useFollowing();
+  const { currentUserId, followingIds, followingMap } = useFollowing();
   const isOwnProfile = profile.id === currentUserId;
+  const followers = users.filter((user) => (followingMap[user.id] ?? []).includes(profile.id));
+  const following = users.filter((user) => (followingMap[profile.id] ?? []).includes(user.id));
   return (
     <div className="space-y-8">
       <UserProfileHeader profile={profile}>
@@ -69,7 +71,7 @@ export function ProfilePageClient({
         </div>
       </section>
 
-      <section className="space-y-5">
+      <section id="viagens" className="space-y-5">
         <div>
           <p className="text-xs uppercase tracking-[0.24em] text-accentSoft">Viagens publicadas</p>
           <h2 className="mt-2 text-2xl font-semibold text-text">Roteiros compartilhados por {profile.name}</h2>
@@ -87,7 +89,7 @@ export function ProfilePageClient({
         )}
       </section>
 
-      <section className="space-y-5">
+      <section id="fotos" className="space-y-5">
         <div>
           <p className="text-xs uppercase tracking-[0.24em] text-accentSoft">Fotos</p>
           <h2 className="mt-2 text-2xl font-semibold text-text">Memórias de estrada do perfil</h2>
@@ -119,6 +121,66 @@ export function ProfilePageClient({
         )}
       </section>
 
+      <section id="seguidores" className="space-y-5">
+        <div>
+          <p className="text-xs uppercase tracking-[0.24em] text-accentSoft">Seguidores</p>
+          <h2 className="mt-2 text-2xl font-semibold text-text">Quem acompanha este perfil</h2>
+        </div>
+        {followers.length > 0 ? (
+          <div className="rounded-[24px] border border-border bg-surface">
+            {followers.map((user) => (
+              <a
+                key={user.id}
+                href={`/perfil/${user.username}`}
+                className="flex items-center justify-between border-b border-border px-5 py-4 last:border-b-0"
+              >
+                <span>
+                  <span className="block font-medium text-text">{user.name}</span>
+                  <span className="block text-sm text-muted">@{user.username}</span>
+                </span>
+                <span className="text-sm text-muted">
+                  {user.city}, {user.state}
+                </span>
+              </a>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-[24px] border border-dashed border-border bg-surface p-6 text-sm text-muted">
+            Este perfil ainda não tem seguidores visíveis.
+          </div>
+        )}
+      </section>
+
+      <section id="seguindo" className="space-y-5">
+        <div>
+          <p className="text-xs uppercase tracking-[0.24em] text-accentSoft">Seguindo</p>
+          <h2 className="mt-2 text-2xl font-semibold text-text">Quem este perfil acompanha</h2>
+        </div>
+        {following.length > 0 ? (
+          <div className="rounded-[24px] border border-border bg-surface">
+            {following.map((user) => (
+              <a
+                key={user.id}
+                href={`/perfil/${user.username}`}
+                className="flex items-center justify-between border-b border-border px-5 py-4 last:border-b-0"
+              >
+                <span>
+                  <span className="block font-medium text-text">{user.name}</span>
+                  <span className="block text-sm text-muted">@{user.username}</span>
+                </span>
+                <span className="text-sm text-muted">
+                  {user.city}, {user.state}
+                </span>
+              </a>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-[24px] border border-dashed border-border bg-surface p-6 text-sm text-muted">
+            Este perfil ainda não segue ninguém.
+          </div>
+        )}
+      </section>
+
       <section className="space-y-5">
         <div className="flex items-end justify-between gap-4">
           <div>
@@ -132,14 +194,8 @@ export function ProfilePageClient({
           </Link>
         </div>
         <div className="grid gap-5 lg:grid-cols-2">
-          {relatedUsers.map(({ user, tripCount, photoCount, previewTrip }) => (
-            <BikerCard
-              key={user.id}
-              user={user}
-              previewTrip={previewTrip}
-              tripCount={tripCount}
-              photoCount={photoCount}
-            />
+          {relatedUsers.map(({ user, tripCount, photoCount }) => (
+            <BikerCard key={user.id} user={user} tripCount={tripCount} photoCount={photoCount} />
           ))}
         </div>
       </section>
