@@ -22,7 +22,7 @@ export function UserProfileHeader({
           fill
           className="object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-white/45 via-white/5 to-transparent" />
       </div>
 
       <div className="relative px-5 pb-6">

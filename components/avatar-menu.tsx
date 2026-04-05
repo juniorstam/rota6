@@ -59,7 +59,7 @@ export function AvatarMenu() {
               Meu perfil
             </Link>
             <Link
-              href={`/perfil/${activeUser.username}#viagens`}
+              href={`/perfil/${activeUser.username}`}
               className="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm text-text transition hover:bg-background/60"
               onClick={() => setOpen(false)}
             >
@@ -67,7 +67,7 @@ export function AvatarMenu() {
               Minhas viagens
             </Link>
             <Link
-              href={`/perfil/${activeUser.username}#fotos`}
+              href={`/perfil/${activeUser.username}/fotos`}
               className="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm text-text transition hover:bg-background/60"
               onClick={() => setOpen(false)}
             >
@@ -83,7 +83,7 @@ export function AvatarMenu() {
               Favoritos
             </Link>
             <Link
-              href={`/perfil/${activeUser.username}#seguidores`}
+              href={`/perfil/${activeUser.username}/seguidores`}
               className="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm text-text transition hover:bg-background/60"
               onClick={() => setOpen(false)}
             >
@@ -91,7 +91,7 @@ export function AvatarMenu() {
               Seguidores
             </Link>
             <Link
-              href={`/perfil/${activeUser.username}#seguindo`}
+              href={`/perfil/${activeUser.username}/seguindo`}
               className="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm text-text transition hover:bg-background/60"
               onClick={() => setOpen(false)}
             >
