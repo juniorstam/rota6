@@ -3,7 +3,13 @@ import { Bike, MapPin, Route } from "lucide-react";
 
 import { UserProfile } from "@/lib/types";
 
-export function UserProfileHeader({ profile }: { profile: UserProfile }) {
+export function UserProfileHeader({
+  profile,
+  children
+}: {
+  profile: UserProfile;
+  children?: React.ReactNode;
+}) {
   return (
     <section className="overflow-hidden rounded-[32px] border border-border bg-surface">
       <div className="relative h-44">
@@ -31,18 +37,21 @@ export function UserProfileHeader({ profile }: { profile: UserProfile }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-            <div className="rounded-2xl border border-border bg-background/60 p-3">
-              <p className="text-xs text-muted">viagens</p>
-              <p className="text-lg font-semibold text-text">{profile.publishedTripsCount}</p>
-            </div>
-            <div className="rounded-2xl border border-border bg-background/60 p-3">
-              <p className="text-xs text-muted">recomendações</p>
-              <p className="text-lg font-semibold text-text">{profile.publishedRecommendationsCount}</p>
-            </div>
-            <div className="rounded-2xl border border-border bg-background/60 p-3 md:block">
-              <p className="text-xs text-muted">estilo</p>
-              <p className="text-sm font-medium capitalize text-text">{profile.travelStyle}</p>
+          <div className="flex flex-col items-start gap-3 md:items-end">
+            {children}
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+              <div className="rounded-2xl border border-border bg-background/60 p-3">
+                <p className="text-xs text-muted">viagens</p>
+                <p className="text-lg font-semibold text-text">{profile.publishedTripsCount}</p>
+              </div>
+              <div className="rounded-2xl border border-border bg-background/60 p-3">
+                <p className="text-xs text-muted">recomendações</p>
+                <p className="text-lg font-semibold text-text">{profile.publishedRecommendationsCount}</p>
+              </div>
+              <div className="rounded-2xl border border-border bg-background/60 p-3 md:block">
+                <p className="text-xs text-muted">estilo</p>
+                <p className="text-sm font-medium capitalize text-text">{profile.travelStyle}</p>
+              </div>
             </div>
           </div>
         </div>

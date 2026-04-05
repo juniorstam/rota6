@@ -1,0 +1,63 @@
+"use client";
+
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+
+import { readFollowing, saveFollowing, type FollowingState } from "@/lib/following";
+import { followingByUserId, users } from "@/lib/mock-data";
+
+interface FollowingContextValue {
+  currentUserId: string;
+  followingIds: string[];
+  isFollowing: (targetUserId: string) => boolean;
+  toggleFollowing: (targetUserId: string) => void;
+}
+
+const FollowingContext = createContext<FollowingContextValue | undefined>(undefined);
+
+export function FollowingProvider({ children }: { children: React.ReactNode }) {
+  const currentUserId = users[0].id;
+  const [state, setState] = useState<FollowingState>(followingByUserId);
+
+  useEffect(() => {
+    setState(readFollowing(followingByUserId));
+  }, []);
+
+  const value = useMemo<FollowingContextValue>(
+    () => ({
+      currentUserId,
+      followingIds: state[currentUserId] ?? [],
+      isFollowing(targetUserId) {
+        return (state[currentUserId] ?? []).includes(targetUserId);
+      },
+      toggleFollowing(targetUserId) {
+        if (targetUserId === currentUserId) {
+          return;
+        }
+
+        const currentFollowing = state[currentUserId] ?? [];
+        const nextFollowing = currentFollowing.includes(targetUserId)
+          ? currentFollowing.filter((id) => id !== targetUserId)
+          : [...currentFollowing, targetUserId];
+
+        const nextState = {
+          ...state,
+          [currentUserId]: nextFollowing
+        };
+
+        setState(nextState);
+        saveFollowing(nextState);
+      }
+    }),
+    [currentUserId, state]
+  );
+
+  return <FollowingContext.Provider value={value}>{children}</FollowingContext.Provider>;
+}
+
+export function useFollowing() {
+  const context = useContext(FollowingContext);
+  if (!context) {
+    throw new Error("useFollowing must be used inside FollowingProvider");
+  }
+  return context;
+}

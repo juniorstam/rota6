@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Camera, MapPin, Route } from "lucide-react";
 
+import { FollowButton } from "@/components/follow-button";
 import { UserProfile } from "@/lib/types";
 
 export function UserCard({
@@ -25,12 +26,15 @@ export function UserCard({
               <h3 className="text-lg font-semibold text-text">{user.name}</h3>
               <p className="text-sm text-muted">@{user.username}</p>
             </div>
-            <Link
-              href={`/perfil/${user.username}`}
-              className="rounded-full border border-border px-4 py-2 text-sm text-text"
-            >
-              Ver perfil
-            </Link>
+            <div className="flex items-center gap-2">
+              <FollowButton targetUserId={user.id} />
+              <Link
+                href={`/perfil/${user.username}`}
+                className="rounded-full border border-border px-4 py-2 text-sm text-text"
+              >
+                Ver perfil
+              </Link>
+            </div>
           </div>
           <p className="mt-3 text-sm leading-6 text-muted">{user.bio}</p>
           <div className="mt-4 flex flex-wrap gap-2 text-xs text-muted">

@@ -4,6 +4,7 @@ import { Header } from "@/components/header";
 import { MobileNav } from "@/components/mobile-nav";
 import { AuthProvider } from "@/providers/auth-provider";
 import { FavoritesProvider } from "@/providers/favorites-provider";
+import { FollowingProvider } from "@/providers/following-provider";
 
 import "./globals.css";
 
@@ -17,11 +18,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="pt-BR">
       <body className="bg-background text-text">
         <AuthProvider>
-          <FavoritesProvider>
-            <Header />
-            <main className="mx-auto min-h-screen max-w-7xl px-4 pb-28 pt-6 md:px-6 md:pb-14">{children}</main>
-            <MobileNav />
-          </FavoritesProvider>
+          <FollowingProvider>
+            <FavoritesProvider>
+              <Header />
+              <main className="mx-auto min-h-screen max-w-7xl px-4 pb-28 pt-6 md:px-6 md:pb-14">{children}</main>
+              <MobileNav />
+            </FavoritesProvider>
+          </FollowingProvider>
         </AuthProvider>
       </body>
     </html>
