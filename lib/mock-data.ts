@@ -53,8 +53,62 @@ export const users: UserProfile[] = [
     travelStyle: "grupo",
     publishedTripsCount: 5,
     publishedRecommendationsCount: 11
+  },
+  {
+    id: "user-4",
+    username: "marinadecapacete",
+    name: "Marina Costa",
+    email: "marina@rota6.dev",
+    avatarUrl:
+      "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=300&q=80",
+    city: "Florianópolis",
+    state: "SC",
+    motorcycle: "Honda NC 750X",
+    bio: "Viagem boa para mim tem mar, serra, café e um roteiro sem pressa.",
+    travelStyle: "casal",
+    publishedTripsCount: 6,
+    publishedRecommendationsCount: 15
+  },
+  {
+    id: "user-5",
+    username: "rafaelcurvas",
+    name: "Rafael Mendes",
+    email: "rafael@rota6.dev",
+    avatarUrl:
+      "https://images.unsplash.com/photo-1504593811423-6dd665756598?auto=format&fit=crop&w=300&q=80",
+    city: "São Paulo",
+    state: "SP",
+    motorcycle: "Yamaha Tracer 900",
+    bio: "Estrada técnica, ritmo constante e muita atenção em apoio confiável pelo caminho.",
+    travelStyle: "solo",
+    publishedTripsCount: 10,
+    publishedRecommendationsCount: 27
+  },
+  {
+    id: "user-6",
+    username: "carolnaestrada",
+    name: "Carol Freitas",
+    email: "carol@rota6.dev",
+    avatarUrl:
+      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=300&q=80",
+    city: "Goiânia",
+    state: "GO",
+    motorcycle: "Kawasaki Versys 650",
+    bio: "Bate-volta longo, céu aberto e fotos espontâneas do que faz a viagem valer.",
+    travelStyle: "bate-volta",
+    publishedTripsCount: 4,
+    publishedRecommendationsCount: 9
   }
 ];
+
+export const followingByUserId: Record<string, string[]> = {
+  "user-1": ["user-2", "user-3", "user-4", "user-5"],
+  "user-2": ["user-1", "user-4"],
+  "user-3": ["user-1", "user-5"],
+  "user-4": ["user-1", "user-2"],
+  "user-5": ["user-1", "user-3", "user-6"],
+  "user-6": ["user-1", "user-4"]
+};
 
 export const places: Place[] = [
   {
@@ -291,6 +345,227 @@ export const trips: PublishedTrip[] = [
     distanceKm: 118,
     durationHours: 2.9,
     commentsCount: 6
+  },
+  {
+    id: "trip-4",
+    slug: "litoral-sul-com-cafe-e-pousada",
+    title: "Litoral Sul com café e pousada de apoio",
+    origin: "Florianópolis, SC",
+    destination: "Praia do Rosa, SC",
+    summary: "Uma rota leve para curtir o caminho, fazer pausa bonita e dormir perto do mar.",
+    coverUrl:
+      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1400&q=80",
+    photos: [
+      "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1200&q=80",
+      "https://images.unsplash.com/photo-1473116763249-2faaef81ccda?auto=format&fit=crop&w=1200&q=80"
+    ],
+    routeStops: [
+      {
+        id: "stop-5",
+        name: "Café da estrada",
+        city: "Imbituba",
+        state: "SC",
+        type: "parada",
+        notes: "Bom café e saída rápida para seguir ao litoral."
+      }
+    ],
+    tips: ["Boa rota para fim de semana com pouca pressa.", "Melhor sair após o pico da manhã."],
+    roadLevel: "tranquila",
+    tripType: "casal",
+    publicVisibility: true,
+    author: {
+      id: users[3].id,
+      username: users[3].username,
+      name: users[3].name,
+      avatarUrl: users[3].avatarUrl,
+      motorcycle: users[3].motorcycle
+    },
+    distanceKm: 98,
+    durationHours: 2.1,
+    commentsCount: 4
+  },
+  {
+    id: "trip-5",
+    slug: "estrada-dos-romeiros-bate-volta",
+    title: "Estrada dos Romeiros em bate-volta",
+    origin: "São Paulo, SP",
+    destination: "Santana de Parnaíba, SP",
+    summary: "Trecho curto, histórico e perfeito para aquecer a semana sem perder a estrada.",
+    coverUrl:
+      "https://images.unsplash.com/photo-1500534314209-a26db0f5b4aa?auto=format&fit=crop&w=1400&q=80",
+    photos: [
+      "https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?auto=format&fit=crop&w=1200&q=80"
+    ],
+    routeStops: [
+      {
+        id: "stop-6",
+        name: "Mirante local",
+        city: "Barueri",
+        state: "SP",
+        type: "paisagem"
+      }
+    ],
+    tips: ["Ótima rota para rodar cedo.", "Vale combinar com café na volta."],
+    roadLevel: "moderada",
+    tripType: "solo",
+    publicVisibility: true,
+    author: {
+      id: users[4].id,
+      username: users[4].username,
+      name: users[4].name,
+      avatarUrl: users[4].avatarUrl,
+      motorcycle: users[4].motorcycle
+    },
+    distanceKm: 62,
+    durationHours: 1.6,
+    commentsCount: 7
+  },
+  {
+    id: "trip-6",
+    slug: "pirenopolis-com-paradas-fotograficas",
+    title: "Pirenópolis com paradas fotográficas",
+    origin: "Goiânia, GO",
+    destination: "Pirenópolis, GO",
+    summary: "Curvas leves, luz bonita no fim da tarde e paradas que rendem boas fotos.",
+    coverUrl:
+      "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1400&q=80",
+    photos: [
+      "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80",
+      "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=80"
+    ],
+    routeStops: [
+      {
+        id: "stop-7",
+        name: "Parada para foto",
+        city: "Pirenópolis",
+        state: "GO",
+        type: "paisagem"
+      }
+    ],
+    tips: ["Melhor luz entre 16h e 17h30.", "Boa para quem quer viagem curta e bonita."],
+    roadLevel: "tranquila",
+    tripType: "grupo",
+    publicVisibility: true,
+    author: {
+      id: users[5].id,
+      username: users[5].username,
+      name: users[5].name,
+      avatarUrl: users[5].avatarUrl,
+      motorcycle: users[5].motorcycle
+    },
+    distanceKm: 151,
+    durationHours: 2.5,
+    commentsCount: 5
+  },
+  {
+    id: "trip-7",
+    slug: "capitolio-e-curvas-de-minas",
+    title: "Capitólio e curvas de Minas",
+    origin: "Belo Horizonte, MG",
+    destination: "Capitólio, MG",
+    summary: "Viagem para curtir a tocada, almoçar bem e terminar com vista boa da represa.",
+    coverUrl:
+      "https://images.unsplash.com/photo-1493246507139-91e8fad9978e?auto=format&fit=crop&w=1400&q=80",
+    photos: [
+      "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80"
+    ],
+    routeStops: [
+      {
+        id: "stop-8",
+        name: "Posto de apoio",
+        city: "Divinópolis",
+        state: "MG",
+        type: "combustivel"
+      }
+    ],
+    tips: ["Bom roteiro de fim de semana.", "Vale revisar pressão dos pneus antes de sair."],
+    roadLevel: "moderada",
+    tripType: "grupo",
+    publicVisibility: true,
+    author: {
+      id: users[2].id,
+      username: users[2].username,
+      name: users[2].name,
+      avatarUrl: users[2].avatarUrl,
+      motorcycle: users[2].motorcycle
+    },
+    distanceKm: 279,
+    durationHours: 4.7,
+    commentsCount: 11
+  },
+  {
+    id: "trip-8",
+    slug: "mantiqueira-cedo-e-sem-pressa",
+    title: "Mantiqueira cedo e sem pressa",
+    origin: "Campinas, SP",
+    destination: "Santo Antônio do Pinhal, SP",
+    summary: "Subida gostosa, clima fresco e ótimos pontos para parar em dupla.",
+    coverUrl:
+      "https://images.unsplash.com/photo-1454496522488-7a8e488e8606?auto=format&fit=crop&w=1400&q=80",
+    photos: [
+      "https://images.unsplash.com/photo-1482192505345-5655af888cc4?auto=format&fit=crop&w=1200&q=80",
+      "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80"
+    ],
+    routeStops: [
+      {
+        id: "stop-9",
+        name: "Café com vista",
+        city: "São Bento do Sapucaí",
+        state: "SP",
+        type: "parada"
+      }
+    ],
+    tips: ["Bom para casal.", "Saia cedo para encontrar a serra mais vazia."],
+    roadLevel: "tranquila",
+    tripType: "casal",
+    publicVisibility: true,
+    author: {
+      id: users[1].id,
+      username: users[1].username,
+      name: users[1].name,
+      avatarUrl: users[1].avatarUrl,
+      motorcycle: users[1].motorcycle
+    },
+    distanceKm: 182,
+    durationHours: 3.4,
+    commentsCount: 8
+  },
+  {
+    id: "trip-9",
+    slug: "serra-catarinense-com-frios-e-mirantes",
+    title: "Serra Catarinense com frio e mirantes",
+    origin: "Florianópolis, SC",
+    destination: "Urubici, SC",
+    summary: "Subida bonita, clima serrano e várias pausas que rendem álbum inteiro.",
+    coverUrl:
+      "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1400&q=80",
+    photos: [
+      "https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=1200&q=80",
+      "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80"
+    ],
+    routeStops: [
+      {
+        id: "stop-10",
+        name: "Mirante local",
+        city: "Bom Retiro",
+        state: "SC",
+        type: "paisagem"
+      }
+    ],
+    tips: ["Leve camada térmica.", "Ótima viagem para pernoite."],
+    roadLevel: "moderada",
+    tripType: "casal",
+    publicVisibility: true,
+    author: {
+      id: users[3].id,
+      username: users[3].username,
+      name: users[3].name,
+      avatarUrl: users[3].avatarUrl,
+      motorcycle: users[3].motorcycle
+    },
+    distanceKm: 167,
+    durationHours: 3.7,
+    commentsCount: 13
   }
 ];
 

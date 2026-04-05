@@ -22,7 +22,9 @@ export function Header() {
         </Link>
 
         <nav className="hidden items-center gap-5 text-sm text-muted md:flex">
+          <Link href="/">Início</Link>
           <Link href="/explorar">Explorar</Link>
+          <Link href="/pessoas">Pessoas</Link>
           <Link href="/planejar">Planejar</Link>
           <Link href="/favoritos">Favoritos</Link>
           <Link href="/admin">Admin</Link>

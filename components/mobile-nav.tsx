@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Heart, Home, Map, Search, User } from "lucide-react";
+import { Heart, Home, Map, Search, Users } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils";
@@ -9,9 +9,9 @@ import { cn } from "@/lib/utils";
 const items = [
   { href: "/", label: "Home", icon: Home },
   { href: "/explorar", label: "Explorar", icon: Search },
+  { href: "/pessoas", label: "Pessoas", icon: Users },
   { href: "/planejar", label: "Planejar", icon: Map },
-  { href: "/favoritos", label: "Favoritos", icon: Heart },
-  { href: "/perfil/junior", label: "Perfil", icon: User }
+  { href: "/favoritos", label: "Favoritos", icon: Heart }
 ];
 
 export function MobileNav() {
