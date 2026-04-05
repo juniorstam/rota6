@@ -27,6 +27,7 @@ export default async function ProfilePage({
       const userTrips = trips.filter((trip) => trip.author.id === user.id);
       return {
         user,
+        previewTrip: userTrips[0],
         tripCount: userTrips.length,
         photoCount: userTrips.reduce((count, trip) => count + trip.photos.length, 0)
       };

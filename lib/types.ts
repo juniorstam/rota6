@@ -83,6 +83,7 @@ export interface PublishedTrip {
   summary: string;
   coverUrl: string;
   photos: string[];
+  tags: string[];
   routeStops: TripStop[];
   tips: string[];
   roadLevel: TripRoadLevel;

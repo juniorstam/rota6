@@ -7,7 +7,7 @@ import { FollowButton } from "@/components/follow-button";
 import { PhotoGallery } from "@/components/photo-gallery";
 import { PlaceCard } from "@/components/place-card";
 import { TripCard } from "@/components/trip-card";
-import { UserCard } from "@/components/user-card";
+import { BikerCard } from "@/components/biker-card";
 import { UserProfileHeader } from "@/components/user-profile-header";
 import { Place, PublishedTrip, UserProfile } from "@/lib/types";
 import { useFollowing } from "@/providers/following-provider";
@@ -23,15 +23,15 @@ export function ProfilePageClient({
   profileTrips: PublishedTrip[];
   profilePlaces: Place[];
   profilePhotos: string[];
-  relatedUsers: Array<{ user: UserProfile; tripCount: number; photoCount: number }>;
+  relatedUsers: Array<{
+    user: UserProfile;
+    tripCount: number;
+    photoCount: number;
+    previewTrip?: PublishedTrip;
+  }>;
 }) {
   const { currentUserId, followingIds } = useFollowing();
   const isOwnProfile = profile.id === currentUserId;
-  const followersCount = Object.values({ [currentUserId]: followingIds }).reduce(
-    (total, ids) => total + (ids.includes(profile.id) ? 1 : 0),
-    0
-  );
-
   return (
     <div className="space-y-8">
       <UserProfileHeader profile={profile}>
@@ -124,16 +124,22 @@ export function ProfilePageClient({
           <div>
             <p className="text-xs uppercase tracking-[0.24em] text-accentSoft">Rede próxima</p>
             <h2 className="mt-2 text-2xl font-semibold text-text">
-              {isOwnProfile ? "Pessoas que combinam com sua tocada" : `Outros perfis para ver a partir de ${profile.name}`}
+              {isOwnProfile ? "Bikers que combinam com sua tocada" : `Outros bikers para ver a partir de ${profile.name}`}
             </h2>
           </div>
-          <Link href="/pessoas" className="text-sm text-muted">
-            ver mais pessoas
+          <Link href="/bikers" className="text-sm text-muted">
+            ver mais bikers
           </Link>
         </div>
         <div className="grid gap-5 lg:grid-cols-2">
-          {relatedUsers.map(({ user, tripCount, photoCount }) => (
-            <UserCard key={user.id} user={user} tripCount={tripCount} photoCount={photoCount} />
+          {relatedUsers.map(({ user, tripCount, photoCount, previewTrip }) => (
+            <BikerCard
+              key={user.id}
+              user={user}
+              previewTrip={previewTrip}
+              tripCount={tripCount}
+              photoCount={photoCount}
+            />
           ))}
         </div>
       </section>

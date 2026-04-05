@@ -232,6 +232,7 @@ export const trips: PublishedTrip[] = [
       "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80",
       "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80"
     ],
+    tags: ["serra", "litoral", "casal"],
     routeStops: [
       {
         id: "stop-1",
@@ -281,6 +282,7 @@ export const trips: PublishedTrip[] = [
     photos: [
       "https://images.unsplash.com/photo-1500048993953-d23a436266cf?auto=format&fit=crop&w=1200&q=80"
     ],
+    tags: ["serra", "casal", "frio"],
     routeStops: [
       {
         id: "stop-3",
@@ -321,6 +323,7 @@ export const trips: PublishedTrip[] = [
       "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80",
       "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80"
     ],
+    tags: ["serra", "grupo", "bate-volta"],
     routeStops: [
       {
         id: "stop-4",
@@ -359,6 +362,7 @@ export const trips: PublishedTrip[] = [
       "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1200&q=80",
       "https://images.unsplash.com/photo-1473116763249-2faaef81ccda?auto=format&fit=crop&w=1200&q=80"
     ],
+    tags: ["litoral", "casal", "descanso"],
     routeStops: [
       {
         id: "stop-5",
@@ -396,6 +400,7 @@ export const trips: PublishedTrip[] = [
     photos: [
       "https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?auto=format&fit=crop&w=1200&q=80"
     ],
+    tags: ["urbano", "solo", "bate-volta"],
     routeStops: [
       {
         id: "stop-6",
@@ -433,6 +438,7 @@ export const trips: PublishedTrip[] = [
       "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80",
       "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=80"
     ],
+    tags: ["grupo", "foto", "bate-volta"],
     routeStops: [
       {
         id: "stop-7",
@@ -469,6 +475,7 @@ export const trips: PublishedTrip[] = [
     photos: [
       "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80"
     ],
+    tags: ["serra", "grupo", "fim-de-semana"],
     routeStops: [
       {
         id: "stop-8",
@@ -506,6 +513,7 @@ export const trips: PublishedTrip[] = [
       "https://images.unsplash.com/photo-1482192505345-5655af888cc4?auto=format&fit=crop&w=1200&q=80",
       "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80"
     ],
+    tags: ["serra", "casal", "frio"],
     routeStops: [
       {
         id: "stop-9",
@@ -543,6 +551,7 @@ export const trips: PublishedTrip[] = [
       "https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=1200&q=80",
       "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80"
     ],
+    tags: ["serra", "casal", "mirantes"],
     routeStops: [
       {
         id: "stop-10",

@@ -1,4 +1,4 @@
-import { UserCard } from "@/components/user-card";
+import { BikerCard } from "@/components/biker-card";
 import { FilterBar } from "@/components/filter-bar";
 import { PlaceCard } from "@/components/place-card";
 import { SearchBar } from "@/components/search-bar";
@@ -65,14 +65,22 @@ export default async function ExplorePage({
 
       <section className="space-y-5">
         <div>
-          <p className="text-xs uppercase tracking-[0.24em] text-accentSoft">Pessoas</p>
+          <p className="text-xs uppercase tracking-[0.24em] text-accentSoft">Bikers</p>
           <h2 className="mt-2 text-2xl font-semibold text-text">Motociclistas e perfis públicos no radar</h2>
         </div>
         <div className="grid gap-5 lg:grid-cols-2">
           {filteredUsers.map((user) => {
             const userTrips = trips.filter((trip) => trip.author.id === user.id);
             const photoCount = userTrips.reduce((count, trip) => count + trip.photos.length, 0);
-            return <UserCard key={user.id} user={user} tripCount={userTrips.length} photoCount={photoCount} />;
+            return (
+              <BikerCard
+                key={user.id}
+                user={user}
+                previewTrip={userTrips[0]}
+                tripCount={userTrips.length}
+                photoCount={photoCount}
+              />
+            );
           })}
         </div>
       </section>
