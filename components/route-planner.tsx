@@ -9,10 +9,20 @@ import { mapService } from "@/lib/services/map-service";
 import { RouteResult } from "@/lib/types";
 import { formatDistance, formatDuration } from "@/lib/utils";
 
-export function RoutePlanner({ initialRoute }: { initialRoute: RouteResult }) {
-  const [origin, setOrigin] = useState("Curitiba, PR");
-  const [destination, setDestination] = useState("Pontal do Paraná, PR");
-  const [stops, setStops] = useState(["Morretes, PR"]);
+export function RoutePlanner({
+  initialRoute,
+  initialOrigin,
+  initialDestination,
+  initialStops
+}: {
+  initialRoute: RouteResult;
+  initialOrigin?: string;
+  initialDestination?: string;
+  initialStops?: string[];
+}) {
+  const [origin, setOrigin] = useState(initialOrigin ?? "Curitiba, PR");
+  const [destination, setDestination] = useState(initialDestination ?? "Pontal do Paraná, PR");
+  const [stops, setStops] = useState(initialStops?.length ? initialStops : ["Morretes, PR"]);
   const [route, setRoute] = useState<RouteResult>(initialRoute);
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);

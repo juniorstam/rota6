@@ -1,5 +1,8 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Route } from "lucide-react";
 
+import { FavoriteButton } from "@/components/favorite-button";
 import { PhotoGallery } from "@/components/photo-gallery";
 import { ReviewCard } from "@/components/review-card";
 import { places } from "@/lib/mock-data";
@@ -22,6 +25,17 @@ export default async function PlaceDetailsPage({
         <p className="text-xs uppercase tracking-[0.24em] text-accentSoft">{place.category}</p>
         <h1 className="mt-2 text-4xl font-semibold text-text">{place.name}</h1>
         <p className="mt-3 max-w-3xl text-sm leading-6 text-muted">{place.description}</p>
+
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          <Link
+            href={`/planejar?destino=${encodeURIComponent(`${place.name}, ${place.city}, ${place.state}`)}`}
+            className="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-3 text-sm font-semibold text-background"
+          >
+            <Route size={16} />
+            Ir para este lugar
+          </Link>
+          <FavoriteButton id={place.id} type="place" />
+        </div>
 
         <div className="mt-5 flex flex-wrap gap-2">
           {place.tags.map((tag) => (

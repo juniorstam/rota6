@@ -13,7 +13,7 @@ export function TripCard({ trip }: { trip: PublishedTrip }) {
         <Image src={trip.coverUrl} alt={trip.title} fill className="object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
         <div className="absolute right-4 top-4">
-          <FavoriteButton />
+          <FavoriteButton id={trip.id} type="trip" />
         </div>
         <div className="absolute bottom-4 left-4 right-4">
           <div className="mb-2 flex flex-wrap gap-2 text-xs text-background">

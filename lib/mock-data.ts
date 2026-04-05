@@ -38,6 +38,21 @@ export const users: UserProfile[] = [
     travelStyle: "casal",
     publishedTripsCount: 8,
     publishedRecommendationsCount: 18
+  },
+  {
+    id: "user-3",
+    username: "isaacnaestrada",
+    name: "Isaac",
+    email: "isaac@rota6.dev",
+    avatarUrl:
+      "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=300&q=80",
+    city: "Belo Horizonte",
+    state: "MG",
+    motorcycle: "BMW F 850 GS",
+    bio: "Curto serras, viagens em dupla e registrar paisagens que merecem virar lembrança.",
+    travelStyle: "grupo",
+    publishedTripsCount: 5,
+    publishedRecommendationsCount: 11
   }
 ];
 
@@ -238,6 +253,44 @@ export const trips: PublishedTrip[] = [
     distanceKm: 196,
     durationHours: 3.8,
     commentsCount: 9
+  },
+  {
+    id: "trip-3",
+    slug: "serra-do-cipo-com-paradas-cenicas",
+    title: "Serra do Cipó com paradas cênicas",
+    origin: "Belo Horizonte, MG",
+    destination: "Serra do Cipó, MG",
+    summary: "Um bate-volta estendido com curvas gostosas, café de estrada e fotos no alto da serra.",
+    coverUrl:
+      "https://images.unsplash.com/photo-1526726538690-5cbf956ae2fd?auto=format&fit=crop&w=1400&q=80",
+    photos: [
+      "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80",
+      "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80"
+    ],
+    routeStops: [
+      {
+        id: "stop-4",
+        name: "Mirante da Serra",
+        city: "Santana do Riacho",
+        state: "MG",
+        type: "paisagem",
+        notes: "Bom ponto para pausa curta e fotos."
+      }
+    ],
+    tips: ["Saída cedo melhora muito a experiência.", "Vale levar água e segunda camada leve."],
+    roadLevel: "tranquila",
+    tripType: "grupo",
+    publicVisibility: true,
+    author: {
+      id: users[2].id,
+      username: users[2].username,
+      name: users[2].name,
+      avatarUrl: users[2].avatarUrl,
+      motorcycle: users[2].motorcycle
+    },
+    distanceKm: 118,
+    durationHours: 2.9,
+    commentsCount: 6
   }
 ];
 

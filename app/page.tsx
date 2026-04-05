@@ -44,7 +44,11 @@ export default function HomePage() {
           </div>
 
           <div className="space-y-4 rounded-[32px] border border-border/80 bg-background/50 p-4 md:p-5">
-            <SearchBar placeholder="Busque destino, cidade, mirante, posto ou oficina" buttonLabel="Ver caminhos" />
+            <SearchBar
+              placeholder="Busque destino, cidade, mirante, posto ou oficina"
+              buttonLabel="Ver caminhos"
+              targetPath="/explorar"
+            />
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="rounded-[24px] border border-border bg-surface p-4">
                 <p className="text-xs text-muted">roteiros no radar</p>

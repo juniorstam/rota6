@@ -12,7 +12,7 @@ export function PlaceCard({ place }: { place: Place }) {
       <div className="relative h-56">
         <Image src={place.photos[0]} alt={place.name} fill className="object-cover" />
         <div className="absolute right-4 top-4">
-          <FavoriteButton />
+          <FavoriteButton id={place.id} type="place" />
         </div>
       </div>
 

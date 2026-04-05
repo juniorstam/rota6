@@ -1,17 +1,18 @@
 "use client";
 
 import { Heart } from "lucide-react";
-import { useState } from "react";
 
 import { cn } from "@/lib/utils";
+import { useFavorites } from "@/providers/favorites-provider";
 
-export function FavoriteButton() {
-  const [active, setActive] = useState(false);
+export function FavoriteButton({ id, type }: { id: string; type: "place" | "trip" }) {
+  const { isFavorite, toggleFavorite } = useFavorites();
+  const active = isFavorite(type, id);
 
   return (
     <button
       type="button"
-      onClick={() => setActive((current) => !current)}
+      onClick={() => toggleFavorite(type, id)}
       className={cn(
         "inline-flex h-11 w-11 items-center justify-center rounded-full border transition",
         active
