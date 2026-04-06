@@ -98,16 +98,80 @@ export const users: UserProfile[] = [
     travelStyle: "bate-volta",
     publishedTripsCount: 4,
     publishedRecommendationsCount: 9
+  },
+  {
+    id: "user-7",
+    username: "gabrielserra",
+    name: "Gabriel Torres",
+    email: "gabriel@rota6.dev",
+    avatarUrl:
+      "https://images.unsplash.com/photo-1504257432389-52343af06ae3?auto=format&fit=crop&w=300&q=80",
+    city: "Porto Alegre",
+    state: "RS",
+    motorcycle: "Suzuki V-Strom 650",
+    bio: "Rodagem longa, fronteira, frio e aquelas estradas que pedem pausa para apreciar.",
+    travelStyle: "longa-distancia",
+    publishedTripsCount: 7,
+    publishedRecommendationsCount: 13
+  },
+  {
+    id: "user-8",
+    username: "anafalto",
+    name: "Ana Luiza Prado",
+    email: "ana@rota6.dev",
+    avatarUrl:
+      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=300&q=80",
+    city: "Rio de Janeiro",
+    state: "RJ",
+    motorcycle: "Ducati Scrambler",
+    bio: "Gosto de rotas curtas com visual forte, café bom e chegada leve para aproveitar o dia.",
+    travelStyle: "solo",
+    publishedTripsCount: 5,
+    publishedRecommendationsCount: 12
+  },
+  {
+    id: "user-9",
+    username: "lucasdosul",
+    name: "Lucas Vieira",
+    email: "lucas@rota6.dev",
+    avatarUrl:
+      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80",
+    city: "Campo Grande",
+    state: "MS",
+    motorcycle: "Honda Africa Twin",
+    bio: "Asfalto, calor, horizonte aberto e logística bem pensada para render mais quilômetros.",
+    travelStyle: "grupo",
+    publishedTripsCount: 6,
+    publishedRecommendationsCount: 14
+  },
+  {
+    id: "user-10",
+    username: "fernandacurvas",
+    name: "Fernanda Alves",
+    email: "fernanda@rota6.dev",
+    avatarUrl:
+      "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&q=80",
+    city: "Vitória",
+    state: "ES",
+    motorcycle: "BMW G 310 GS",
+    bio: "Viagens de fim de semana, serra e litoral em sequência, sempre caçando bons apoios de estrada.",
+    travelStyle: "casal",
+    publishedTripsCount: 6,
+    publishedRecommendationsCount: 10
   }
 ];
 
 export const followingByUserId: Record<string, string[]> = {
-  "user-1": ["user-2", "user-3", "user-4", "user-5"],
+  "user-1": ["user-2", "user-3", "user-4", "user-5", "user-7", "user-8", "user-10"],
   "user-2": ["user-1", "user-4"],
   "user-3": ["user-1", "user-5"],
   "user-4": ["user-1", "user-2"],
   "user-5": ["user-1", "user-3", "user-6"],
-  "user-6": ["user-1", "user-4"]
+  "user-6": ["user-1", "user-4"],
+  "user-7": ["user-1", "user-9"],
+  "user-8": ["user-1", "user-2", "user-10"],
+  "user-9": ["user-1", "user-7"],
+  "user-10": ["user-1", "user-4", "user-8"]
 };
 
 export const places: Place[] = [
@@ -575,6 +639,234 @@ export const trips: PublishedTrip[] = [
     distanceKm: 167,
     durationHours: 3.7,
     commentsCount: 13
+  },
+  {
+    id: "trip-10",
+    slug: "rota-dos-canions-com-frio-e-vento",
+    title: "Rota dos Cânions com frio e vento",
+    origin: "Porto Alegre, RS",
+    destination: "Cambará do Sul, RS",
+    summary: "Subida bonita, manhã gelada e visual grande para um roteiro de um fim de semana inteiro.",
+    coverUrl:
+      "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1400&q=80",
+    photos: [
+      "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1200&q=80"
+    ],
+    tags: ["serra", "frio", "longa-distancia"],
+    routeStops: [
+      {
+        id: "stop-11",
+        name: "São Francisco de Paula",
+        city: "São Francisco de Paula",
+        state: "RS",
+        type: "parada",
+        notes: "Bom ponto para café e abastecimento antes da sequência final."
+      }
+    ],
+    tips: ["Leve segunda pele.", "Vento lateral pode aparecer no trecho mais alto."],
+    roadLevel: "moderada",
+    tripType: "grupo",
+    publicVisibility: true,
+    author: {
+      id: users[6].id,
+      username: users[6].username,
+      name: users[6].name,
+      avatarUrl: users[6].avatarUrl,
+      motorcycle: users[6].motorcycle
+    },
+    distanceKm: 187,
+    durationHours: 3.9,
+    commentsCount: 10
+  },
+  {
+    id: "trip-11",
+    slug: "rio-para-petropolis-com-subida-curta",
+    title: "Rio para Petrópolis com subida curta",
+    origin: "Rio de Janeiro, RJ",
+    destination: "Petrópolis, RJ",
+    summary: "Rota clássica para sair cedo, subir a serra e voltar com almoço feito e cabeça boa.",
+    coverUrl:
+      "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1400&q=80",
+    photos: [
+      "https://images.unsplash.com/photo-1507608869274-d3177c8bb4c7?auto=format&fit=crop&w=1200&q=80"
+    ],
+    tags: ["serra", "solo", "bate-volta"],
+    routeStops: [
+      {
+        id: "stop-12",
+        name: "Quitandinha",
+        city: "Petrópolis",
+        state: "RJ",
+        type: "paisagem",
+        notes: "Boa parada rápida para foto."
+      }
+    ],
+    tips: ["Suba cedo para pegar trânsito mais leve.", "Rende bem como escapada de domingo."],
+    roadLevel: "tranquila",
+    tripType: "solo",
+    publicVisibility: true,
+    author: {
+      id: users[7].id,
+      username: users[7].username,
+      name: users[7].name,
+      avatarUrl: users[7].avatarUrl,
+      motorcycle: users[7].motorcycle
+    },
+    distanceKm: 72,
+    durationHours: 1.9,
+    commentsCount: 6
+  },
+  {
+    id: "trip-12",
+    slug: "bonito-com-paradas-de-calor-e-sombra",
+    title: "Bonito com paradas de calor e sombra",
+    origin: "Campo Grande, MS",
+    destination: "Bonito, MS",
+    summary: "Trecho mais longo, muito céu aberto e pontos de apoio pensados para render sem desgaste.",
+    coverUrl:
+      "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1400&q=80",
+    photos: [
+      "https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1200&q=80"
+    ],
+    tags: ["longa-distancia", "grupo", "calor"],
+    routeStops: [
+      {
+        id: "stop-13",
+        name: "Jardim",
+        city: "Jardim",
+        state: "MS",
+        type: "combustivel",
+        notes: "Parada estratégica para água, gasolina e descanso curto."
+      }
+    ],
+    tips: ["Saia cedo para fugir do calor mais forte.", "Mantenha hidratação constante."],
+    roadLevel: "tranquila",
+    tripType: "grupo",
+    publicVisibility: true,
+    author: {
+      id: users[8].id,
+      username: users[8].username,
+      name: users[8].name,
+      avatarUrl: users[8].avatarUrl,
+      motorcycle: users[8].motorcycle
+    },
+    distanceKm: 298,
+    durationHours: 4.6,
+    commentsCount: 9
+  },
+  {
+    id: "trip-13",
+    slug: "vitoria-ao-caparao-em-dois-tempos",
+    title: "Vitória ao Caparaó em dois tempos",
+    origin: "Vitória, ES",
+    destination: "Alto Caparaó, MG",
+    summary: "Rota para subir ganhando altitude aos poucos, com parada boa antes do trecho final serrano.",
+    coverUrl:
+      "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1400&q=80",
+    photos: [
+      "https://images.unsplash.com/photo-1454496522488-7a8e488e8606?auto=format&fit=crop&w=1200&q=80"
+    ],
+    tags: ["serra", "casal", "fim-de-semana"],
+    routeStops: [
+      {
+        id: "stop-14",
+        name: "Venda Nova do Imigrante",
+        city: "Venda Nova do Imigrante",
+        state: "ES",
+        type: "parada",
+        notes: "Ponto ótimo para café e reorganizar a tocada."
+      }
+    ],
+    tips: ["Leve corta-vento.", "Chegando cedo rende mirante e pousada com calma."],
+    roadLevel: "moderada",
+    tripType: "casal",
+    publicVisibility: true,
+    author: {
+      id: users[9].id,
+      username: users[9].username,
+      name: users[9].name,
+      avatarUrl: users[9].avatarUrl,
+      motorcycle: users[9].motorcycle
+    },
+    distanceKm: 254,
+    durationHours: 4.8,
+    commentsCount: 7
+  },
+  {
+    id: "trip-14",
+    slug: "rota-do-vinho-com-pausa-curta",
+    title: "Rota do Vinho com pausa curta",
+    origin: "Curitiba, PR",
+    destination: "São José dos Pinhais, PR",
+    summary: "Trajeto curto e charmoso para rodar cedo, parar em dois pontos e voltar leve para casa.",
+    coverUrl:
+      "https://images.unsplash.com/photo-1482192505345-5655af888cc4?auto=format&fit=crop&w=1400&q=80",
+    photos: [
+      "https://images.unsplash.com/photo-1500048993953-d23a436266cf?auto=format&fit=crop&w=1200&q=80"
+    ],
+    tags: ["urbano", "casal", "curto"],
+    routeStops: [
+      {
+        id: "stop-15",
+        name: "Colônia Mergulhão",
+        city: "São José dos Pinhais",
+        state: "PR",
+        type: "parada",
+        notes: "Bom trecho para almoço leve e pausa curta."
+      }
+    ],
+    tips: ["Boa para manhã de sábado.", "Ótima para rodar sem compromisso longo."],
+    roadLevel: "tranquila",
+    tripType: "casal",
+    publicVisibility: true,
+    author: {
+      id: users[0].id,
+      username: users[0].username,
+      name: users[0].name,
+      avatarUrl: users[0].avatarUrl,
+      motorcycle: users[0].motorcycle
+    },
+    distanceKm: 54,
+    durationHours: 1.4,
+    commentsCount: 5
+  },
+  {
+    id: "trip-15",
+    slug: "costa-verde-com-mar-e-serra",
+    title: "Costa Verde com mar e serra",
+    origin: "Rio de Janeiro, RJ",
+    destination: "Paraty, RJ",
+    summary: "Estrada bonita, visual de mar em sequência e ritmo perfeito para viajar em dupla.",
+    coverUrl:
+      "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1400&q=80",
+    photos: [
+      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80"
+    ],
+    tags: ["litoral", "casal", "fim-de-semana"],
+    routeStops: [
+      {
+        id: "stop-16",
+        name: "Angra dos Reis",
+        city: "Angra dos Reis",
+        state: "RJ",
+        type: "parada",
+        notes: "Boa pausa para esticar, comer e seguir."
+      }
+    ],
+    tips: ["Saia antes das 7h.", "Vale reservar pousada em alta temporada."],
+    roadLevel: "moderada",
+    tripType: "casal",
+    publicVisibility: true,
+    author: {
+      id: users[7].id,
+      username: users[7].username,
+      name: users[7].name,
+      avatarUrl: users[7].avatarUrl,
+      motorcycle: users[7].motorcycle
+    },
+    distanceKm: 248,
+    durationHours: 4.3,
+    commentsCount: 12
   }
 ];
 

@@ -29,32 +29,32 @@ export function ProfilePageClient({
         <FollowButton targetUserId={profile.id} />
       </UserProfileHeader>
 
-      <section className="grid gap-4 md:grid-cols-4">
-        <Link href={`/perfil/${profile.username}`} className="rounded-[24px] border border-border bg-surface p-4 transition hover:bg-surfaceAlt/70">
-          <p className="text-xs text-muted">viagens no perfil</p>
-          <p className="mt-2 inline-flex items-center gap-2 text-2xl font-semibold text-text">
-            <Route size={18} />
+      <section className="grid grid-cols-4 gap-2 sm:gap-3 md:gap-4">
+        <Link href={`/perfil/${profile.username}`} className="rounded-[20px] border border-border bg-surface p-3 transition hover:bg-surfaceAlt/70 sm:rounded-[24px] sm:p-4">
+          <p className="text-[11px] text-muted sm:text-xs">viagens</p>
+          <p className="mt-1 inline-flex items-center gap-1.5 text-lg font-semibold text-text sm:mt-2 sm:gap-2 sm:text-2xl">
+            <Route size={14} className="sm:h-[18px] sm:w-[18px]" />
             {profileTrips.length}
           </p>
         </Link>
-        <Link href={`/perfil/${profile.username}/fotos`} className="rounded-[24px] border border-border bg-surface p-4 transition hover:bg-surfaceAlt/70">
-          <p className="text-xs text-muted">fotos publicadas</p>
-          <p className="mt-2 inline-flex items-center gap-2 text-2xl font-semibold text-text">
-            <Camera size={18} />
+        <Link href={`/perfil/${profile.username}/fotos`} className="rounded-[20px] border border-border bg-surface p-3 transition hover:bg-surfaceAlt/70 sm:rounded-[24px] sm:p-4">
+          <p className="text-[11px] text-muted sm:text-xs">fotos</p>
+          <p className="mt-1 inline-flex items-center gap-1.5 text-lg font-semibold text-text sm:mt-2 sm:gap-2 sm:text-2xl">
+            <Camera size={14} className="sm:h-[18px] sm:w-[18px]" />
             {profilePhotos.length}
           </p>
         </Link>
-        <Link href={`/perfil/${profile.username}/seguidores`} className="rounded-[24px] border border-border bg-surface p-4 transition hover:bg-surfaceAlt/70">
-          <p className="text-xs text-muted">seguidores</p>
-          <p className="mt-2 inline-flex items-center gap-2 text-2xl font-semibold text-text">
-            <Users size={18} />
+        <Link href={`/perfil/${profile.username}/seguidores`} className="rounded-[20px] border border-border bg-surface p-3 transition hover:bg-surfaceAlt/70 sm:rounded-[24px] sm:p-4">
+          <p className="text-[11px] text-muted sm:text-xs">seguidores</p>
+          <p className="mt-1 inline-flex items-center gap-1.5 text-lg font-semibold text-text sm:mt-2 sm:gap-2 sm:text-2xl">
+            <Users size={14} className="sm:h-[18px] sm:w-[18px]" />
             {followersCount}
           </p>
         </Link>
-        <Link href={`/perfil/${profile.username}/seguindo`} className="rounded-[24px] border border-border bg-surface p-4 transition hover:bg-surfaceAlt/70">
-          <p className="text-xs text-muted">seguindo</p>
-          <p className="mt-2 inline-flex items-center gap-2 text-2xl font-semibold text-text">
-            <Users size={18} />
+        <Link href={`/perfil/${profile.username}/seguindo`} className="rounded-[20px] border border-border bg-surface p-3 transition hover:bg-surfaceAlt/70 sm:rounded-[24px] sm:p-4">
+          <p className="text-[11px] text-muted sm:text-xs">seguindo</p>
+          <p className="mt-1 inline-flex items-center gap-1.5 text-lg font-semibold text-text sm:mt-2 sm:gap-2 sm:text-2xl">
+            <Users size={14} className="sm:h-[18px] sm:w-[18px]" />
             {followingCount}
           </p>
         </Link>
