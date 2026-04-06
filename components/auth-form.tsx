@@ -32,6 +32,7 @@ export function AuthForm({ mode }: AuthFormProps) {
 
     setLoading(false);
     router.push("/");
+    router.refresh();
   }
 
   return (

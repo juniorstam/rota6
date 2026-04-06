@@ -4,9 +4,10 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 import { readFollowing, saveFollowing, type FollowingState } from "@/lib/following";
 import { followingByUserId, users } from "@/lib/mock-data";
+import { useAuth } from "@/providers/auth-provider";
 
 interface FollowingContextValue {
-  currentUserId: string;
+  currentUserId: string | null;
   followingIds: string[];
   followingMap: FollowingState;
   isFollowing: (targetUserId: string) => boolean;
@@ -16,7 +17,8 @@ interface FollowingContextValue {
 const FollowingContext = createContext<FollowingContextValue | undefined>(undefined);
 
 export function FollowingProvider({ children }: { children: React.ReactNode }) {
-  const currentUserId = users[0].id;
+  const { user } = useAuth();
+  const currentUserId = user?.id ?? null;
   const [state, setState] = useState<FollowingState>(followingByUserId);
 
   useEffect(() => {
@@ -26,17 +28,21 @@ export function FollowingProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<FollowingContextValue>(
     () => ({
       currentUserId,
-      followingIds: state[currentUserId] ?? [],
+      followingIds: currentUserId ? state[currentUserId] ?? followingByUserId[currentUserId] ?? [] : [],
       followingMap: state,
       isFollowing(targetUserId) {
-        return (state[currentUserId] ?? []).includes(targetUserId);
+        if (!currentUserId) {
+          return false;
+        }
+
+        return (state[currentUserId] ?? followingByUserId[currentUserId] ?? []).includes(targetUserId);
       },
       toggleFollowing(targetUserId) {
-        if (targetUserId === currentUserId) {
+        if (!currentUserId || targetUserId === currentUserId) {
           return;
         }
 
-        const currentFollowing = state[currentUserId] ?? [];
+        const currentFollowing = state[currentUserId] ?? followingByUserId[currentUserId] ?? [];
         const nextFollowing = currentFollowing.includes(targetUserId)
           ? currentFollowing.filter((id) => id !== targetUserId)
           : [...currentFollowing, targetUserId];
