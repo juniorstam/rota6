@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
+import { getMergedProfiles, LOCAL_PROFILES_EVENT } from "@/lib/local-profiles";
 import { UserProfile } from "@/lib/types";
-import { users } from "@/lib/mock-data";
 import { useFollowing } from "@/providers/following-provider";
 
 export function ProfileConnectionsClient({
@@ -15,11 +16,23 @@ export function ProfileConnectionsClient({
   mode: "followers" | "following";
 }) {
   const { followingMap } = useFollowing();
+  const [profiles, setProfiles] = useState<UserProfile[]>(() => getMergedProfiles());
+
+  useEffect(() => {
+    const sync = () => setProfiles(getMergedProfiles());
+    window.addEventListener(LOCAL_PROFILES_EVENT, sync);
+    window.addEventListener("storage", sync);
+
+    return () => {
+      window.removeEventListener(LOCAL_PROFILES_EVENT, sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
 
   const list =
     mode === "followers"
-      ? users.filter((user) => (followingMap[user.id] ?? []).includes(profile.id))
-      : users.filter((user) => (followingMap[profile.id] ?? []).includes(user.id));
+      ? profiles.filter((user) => (followingMap[user.id] ?? []).includes(profile.id))
+      : profiles.filter((user) => (followingMap[profile.id] ?? []).includes(user.id));
 
   return (
     <div className="space-y-5">

@@ -14,6 +14,8 @@ export function BikerCard({
   tripCount: number;
   photoCount: number;
 }) {
+  const locationLabel = [user.city, user.state].filter(Boolean).join(", ") || "Localizacao em configuracao";
+
   return (
     <article className="rounded-[24px] border border-border bg-surface p-4 shadow-glow sm:p-5">
       <div className="space-y-3">
@@ -36,7 +38,7 @@ export function BikerCard({
         <div className="flex flex-wrap gap-2 text-xs text-muted">
           <span className="inline-flex items-center gap-2 rounded-full bg-background px-3 py-1.5">
             <MapPin size={14} />
-            {user.city}, {user.state}
+            {locationLabel}
           </span>
           <span className="inline-flex items-center gap-2 rounded-full bg-background px-3 py-1.5">
             <Route size={14} />

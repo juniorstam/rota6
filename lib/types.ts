@@ -21,9 +21,15 @@ export interface UserProfile {
   coverUrl?: string;
   city: string;
   state: string;
+  region?: string;
   motorcycle: string;
+  motorcycleBrand?: string;
+  motorcycleModel?: string;
   bio: string;
   travelStyle: TravelStyle;
+  contactEmail?: string;
+  phone?: string;
+  instagramHandle?: string;
   publishedTripsCount: number;
   publishedRecommendationsCount: number;
 }

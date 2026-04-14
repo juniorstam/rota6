@@ -62,6 +62,14 @@ export function AvatarMenu() {
               Meu perfil
             </Link>
             <Link
+              href="/perfil/editar"
+              className="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm text-text transition hover:bg-background/60"
+              onClick={() => setOpen(false)}
+            >
+              <Settings size={16} />
+              Editar perfil
+            </Link>
+            <Link
               href={`/perfil/${activeUser.username}`}
               className="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm text-text transition hover:bg-background/60"
               onClick={() => setOpen(false)}

@@ -15,7 +15,8 @@ export function AuthForm({ mode }: AuthFormProps) {
   const { login, signup, requestPasswordReset } = useAuth();
   const [email, setEmail] = useState("junior@rota6.dev");
   const [password, setPassword] = useState("123456");
-  const [name, setName] = useState("Novo motociclista");
+  const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -24,15 +25,20 @@ export function AuthForm({ mode }: AuthFormProps) {
     setLoading(true);
     setMessage("");
 
-    if (mode === "login") {
-      await login({ email, password });
-    } else {
-      await signup({ email, password, name });
-    }
+    try {
+      if (mode === "login") {
+        await login({ email, password });
+      } else {
+        await signup({ email, password, name, username });
+      }
 
-    setLoading(false);
-    router.push("/");
-    router.refresh();
+      setLoading(false);
+      router.push(mode === "signup" ? "/perfil/editar" : "/");
+      router.refresh();
+    } catch (error) {
+      setLoading(false);
+      setMessage(error instanceof Error ? error.message : "Não foi possível concluir a operação agora.");
+    }
   }
 
   return (
@@ -53,14 +59,26 @@ export function AuthForm({ mode }: AuthFormProps) {
 
       <form className="space-y-4" onSubmit={handleSubmit}>
         {mode === "signup" && (
-          <label className="block">
-            <span className="mb-2 block text-sm text-muted">Nome</span>
-            <input
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              className="h-14 w-full rounded-[20px] border border-border bg-background px-4 text-sm text-text outline-none focus:border-accent"
-            />
-          </label>
+          <>
+            <label className="block">
+              <span className="mb-2 block text-sm text-muted">Nome</span>
+              <input
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                className="h-14 w-full rounded-[20px] border border-border bg-background px-4 text-sm text-text outline-none focus:border-accent"
+              />
+            </label>
+
+            <label className="block">
+              <span className="mb-2 block text-sm text-muted">Username</span>
+              <input
+                value={username}
+                onChange={(event) => setUsername(event.target.value)}
+                className="h-14 w-full rounded-[20px] border border-border bg-background px-4 text-sm text-text outline-none focus:border-accent"
+                placeholder="Seu @ público"
+              />
+            </label>
+          </>
         )}
 
         <label className="block">

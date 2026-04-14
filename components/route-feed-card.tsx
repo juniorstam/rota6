@@ -8,6 +8,8 @@ import { PublishedTrip } from "@/lib/types";
 import { formatDistance, formatDuration } from "@/lib/utils";
 
 export function RouteFeedCard({ trip }: { trip: PublishedTrip }) {
+  const tripHref = `/perfil/${trip.author.username}/viagem/${trip.slug}`;
+
   return (
     <article className="overflow-hidden rounded-[28px] border border-border bg-surface shadow-glow">
       <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
@@ -23,14 +25,25 @@ export function RouteFeedCard({ trip }: { trip: PublishedTrip }) {
         <FavoriteButton id={trip.id} type="trip" />
       </div>
 
-      <Link href={`/viagem/${trip.slug}`} className="block">
+      <Link href={tripHref} className="block">
         <div className="relative aspect-square w-full sm:h-[360px] sm:aspect-auto">
-          <Image src={trip.coverUrl} alt={trip.title} fill className="object-cover" />
+          <Image
+            src={trip.coverUrl}
+            alt={trip.title}
+            fill
+            sizes="(max-width: 640px) 100vw, 50vw"
+            className="object-cover"
+          />
         </div>
       </Link>
 
       <div className="space-y-3 p-4 sm:space-y-4 sm:p-5">
         <div className="flex flex-wrap gap-2 text-xs">
+          {!trip.publicVisibility ? (
+            <span className="rounded-full border border-border px-3 py-1 font-semibold text-muted">
+              Não publicada
+            </span>
+          ) : null}
           <Link
             href={`/tipo/${trip.tripType}`}
             className="rounded-full bg-accent px-3 py-1 font-semibold text-white transition hover:opacity-90"
@@ -45,7 +58,7 @@ export function RouteFeedCard({ trip }: { trip: PublishedTrip }) {
           </Link>
         </div>
 
-        <Link href={`/viagem/${trip.slug}`} className="block space-y-3 sm:space-y-4">
+        <Link href={tripHref} className="block space-y-3 sm:space-y-4">
           <div>
             <h3 className="text-base font-semibold leading-snug text-text sm:text-2xl">{trip.title}</h3>
             <p className="mt-1.5 text-sm leading-5 text-muted sm:mt-2 sm:leading-6">{trip.summary}</p>

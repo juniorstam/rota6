@@ -1,13 +1,22 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { LocateFixed, Plus, Route, Search, X } from "lucide-react";
+import { Bookmark, LocateFixed, Plus, Route, Save, Search, Trash2, X } from "lucide-react";
 
 import { MapView } from "@/components/map-view";
 import { PlaceAutocompleteInput } from "@/components/place-autocomplete-input";
+import {
+  deleteSavedRoute,
+  readSavedRoutes,
+  SAVED_ROUTES_EVENT,
+  SavedRouteRecord,
+  upsertSavedRoute
+} from "@/lib/saved-routes";
 import { mapService } from "@/lib/services/map-service";
 import { RouteResult } from "@/lib/types";
 import { formatDistance, formatDuration } from "@/lib/utils";
+import { useAuth } from "@/providers/auth-provider";
+import { useEffect, useMemo } from "react";
 
 export function RoutePlanner({
   initialRoute,
@@ -20,12 +29,27 @@ export function RoutePlanner({
   initialDestination?: string;
   initialStops?: string[];
 }) {
+  const { user } = useAuth();
   const [origin, setOrigin] = useState(initialOrigin ?? "Curitiba, PR");
   const [destination, setDestination] = useState(initialDestination ?? "Pontal do Paraná, PR");
   const [stops, setStops] = useState(initialStops?.length ? initialStops : ["Morretes, PR"]);
   const [route, setRoute] = useState<RouteResult>(initialRoute);
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [savedRoutes, setSavedRoutes] = useState<SavedRouteRecord[]>([]);
+
+  useEffect(() => {
+    const sync = () => setSavedRoutes(readSavedRoutes());
+    sync();
+
+    window.addEventListener(SAVED_ROUTES_EVENT, sync);
+    window.addEventListener("storage", sync);
+
+    return () => {
+      window.removeEventListener(SAVED_ROUTES_EVENT, sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -82,6 +106,45 @@ export function RoutePlanner({
       }
     );
   }
+
+  function saveCurrentRoute() {
+    const trimmedOrigin = origin.trim();
+    const trimmedDestination = destination.trim();
+
+    if (!trimmedOrigin || !trimmedDestination) {
+      setFeedback("Preencha origem e destino antes de salvar a rota.");
+      return;
+    }
+
+    const cleanStops = stops.map((stop) => stop.trim()).filter(Boolean);
+    const title = `${trimmedOrigin} -> ${trimmedDestination}`;
+
+    upsertSavedRoute({
+      id: crypto.randomUUID(),
+      ownerId: user?.id ?? "local-user",
+      title,
+      origin: trimmedOrigin,
+      destination: trimmedDestination,
+      stops: cleanStops,
+      route,
+      updatedAt: new Date().toISOString()
+    });
+
+    setFeedback("Rota salva no navegador. Ela fica disponível na lista “Minhas rotas salvas”.");
+  }
+
+  function openSavedRoute(savedRoute: SavedRouteRecord) {
+    setOrigin(savedRoute.origin);
+    setDestination(savedRoute.destination);
+    setStops(savedRoute.stops.length ? savedRoute.stops : [""]);
+    setRoute(savedRoute.route);
+    setFeedback(`Rota "${savedRoute.title}" carregada para continuar o planejamento.`);
+  }
+
+  const ownSavedRoutes = useMemo(
+    () => savedRoutes.filter((entry) => entry.ownerId === (user?.id ?? "local-user")),
+    [savedRoutes, user?.id]
+  );
 
   return (
     <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
@@ -195,6 +258,15 @@ export function RoutePlanner({
             {loading ? <Search size={18} className="animate-pulse" /> : <Route size={18} />}
             {loading ? "Lendo a estrada..." : "Traçar caminho"}
           </button>
+
+          <button
+            type="button"
+            onClick={saveCurrentRoute}
+            className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-[22px] border border-border bg-background px-5 text-sm font-semibold text-text"
+          >
+            <Save size={18} />
+            Salvar rota
+          </button>
         </form>
 
         {feedback ? (
@@ -221,6 +293,62 @@ export function RoutePlanner({
         <div className="mt-6 rounded-[24px] border border-border bg-background/60 p-4">
           <p className="text-sm text-muted">{route.summary}</p>
         </div>
+
+        <section className="mt-6 rounded-[24px] border border-border bg-background/50 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-text">Minhas rotas salvas</p>
+              <p className="mt-1 text-sm text-muted">
+                Cada conta guarda sua própria lista local para retomar o planejamento depois.
+              </p>
+            </div>
+            <span className="rounded-full border border-border px-3 py-2 text-xs text-muted">
+              {ownSavedRoutes.length} salvas
+            </span>
+          </div>
+
+          {ownSavedRoutes.length ? (
+            <div className="mt-4 space-y-3">
+              {ownSavedRoutes.map((savedRoute) => (
+                <div
+                  key={savedRoute.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-[20px] border border-border bg-surface p-4"
+                >
+                  <div>
+                    <p className="font-medium text-text">{savedRoute.title}</p>
+                    <p className="mt-1 text-sm text-muted">
+                      {savedRoute.stops.length
+                        ? `${savedRoute.stops.length} parada(s) intermediaria(s)`
+                        : "Sem paradas intermediarias"}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => openSavedRoute(savedRoute)}
+                      className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm text-text"
+                    >
+                      <Bookmark size={16} />
+                      Abrir
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => deleteSavedRoute(savedRoute.id)}
+                      className="inline-flex items-center gap-2 rounded-full border border-red-200 px-4 py-2 text-sm text-red-600"
+                    >
+                      <Trash2 size={16} />
+                      Excluir
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-4 rounded-[20px] border border-dashed border-border bg-surface p-4 text-sm text-muted">
+              Nenhuma rota salva ainda. Trace um caminho e use o botão “Salvar rota”.
+            </div>
+          )}
+        </section>
       </section>
 
       <div className="space-y-6">

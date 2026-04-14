@@ -1,11 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { Map } from "lucide-react";
+import { Home, Map, PenSquare, Search, Users } from "lucide-react";
+import { usePathname } from "next/navigation";
 
 import { AvatarMenu } from "@/components/avatar-menu";
+import { cn } from "@/lib/utils";
+
+const desktopItems = [
+  { href: "/", label: "Home", icon: Home },
+  { href: "/explorar", label: "Explorar", icon: Search },
+  { href: "/planejar", label: "Planejar", icon: Map },
+  { href: "/bikers", label: "Bikers", icon: Users },
+  { href: "/publicar", label: "Publicar", icon: PenSquare }
+];
 
 export function Header() {
+  const pathname = usePathname();
+
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/90 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-4 md:px-6">
@@ -18,20 +30,26 @@ export function Header() {
           </div>
         </Link>
 
-        <nav className="hidden items-center gap-5 text-sm text-muted md:flex">
-          <Link href="/">Início</Link>
-          <Link href="/explorar">Explorar</Link>
-          <Link href="/bikers">Bikers</Link>
+        <nav className="hidden items-center gap-2 md:flex">
+          {desktopItems.map(({ href, label, icon: Icon }) => {
+            const active = pathname === href || pathname.startsWith(`${href}/`);
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm transition",
+                  active ? "bg-accent text-background" : "text-muted hover:bg-surface hover:text-text"
+                )}
+              >
+                <Icon size={16} />
+                <span>{label}</span>
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="flex items-center gap-2">
-          <Link
-            href="/planejar"
-            className="hidden rounded-full border border-accent/40 bg-accent px-4 py-2 text-sm font-semibold text-background md:inline-flex"
-          >
-            Planejar viagens
-          </Link>
-
           <AvatarMenu />
         </div>
       </div>

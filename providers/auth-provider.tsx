@@ -12,6 +12,8 @@ interface AuthContextValue {
   signup: (payload: AuthPayload) => Promise<void>;
   requestPasswordReset: (email: string) => Promise<string>;
   logout: () => void;
+  updateUser: (user: UserProfile) => void;
+  refreshUser: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -44,6 +46,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logout() {
         authService.logout();
         setUser(null);
+      },
+      updateUser(nextUser) {
+        setUser(nextUser);
+      },
+      refreshUser() {
+        setUser(getStoredSession());
       }
     }),
     [loading, user]

@@ -1,51 +1,45 @@
 import { users } from "@/lib/mock-data";
+import {
+  clearSession,
+  createBlankProfile,
+  getStoredSession,
+  normalizeUsername,
+  readLocalUsers,
+  saveSession,
+  usernameExists,
+  upsertLocalUser
+} from "@/lib/local-profiles";
 import { UserProfile } from "@/lib/types";
-
-const STORAGE_KEY = "rota6-session";
 
 export interface AuthPayload {
   email: string;
   password: string;
   name?: string;
+  username?: string;
 }
 
-export function getStoredSession(): UserProfile | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  const raw = window.localStorage.getItem(STORAGE_KEY);
-  if (!raw) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(raw) as UserProfile;
-  } catch {
-    return null;
-  }
-}
-
-function saveSession(user: UserProfile) {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-}
+export { getStoredSession };
 
 export const authService = {
   async login({ email }: AuthPayload) {
-    const existingUser = users.find((user) => user.email === email) ?? users[0];
+    const localUsers = readLocalUsers();
+    const existingUser = [...localUsers, ...users].find((user) => user.email === email) ?? users[0];
     saveSession(existingUser);
     return existingUser;
   },
-  async signup({ email, name }: AuthPayload) {
-    const newUser: UserProfile = {
-      ...users[0],
-      id: "new-user",
-      username: (name ?? "novo-usuario").toLowerCase().replace(/\s+/g, ""),
+  async signup({ email, name, username }: AuthPayload) {
+    const nextUsername = normalizeUsername(username ?? name ?? "novo-usuario");
+    if (usernameExists(nextUsername)) {
+      throw new Error(`O @${nextUsername} já existe. Escolha outro username.`);
+    }
+
+    const newUser: UserProfile = createBlankProfile({
       email,
       name: name ?? "Novo motociclista",
-      publishedTripsCount: 0,
-      publishedRecommendationsCount: 0
-    };
+      username: nextUsername
+    });
+
+    upsertLocalUser(newUser);
     saveSession(newUser);
     return newUser;
   },
@@ -56,6 +50,6 @@ export const authService = {
     };
   },
   logout() {
-    window.localStorage.removeItem(STORAGE_KEY);
+    clearSession();
   }
 };

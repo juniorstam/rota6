@@ -1,64 +1,92 @@
 "use client";
 
 import Link from "next/link";
-import { Camera, Route, Users } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 import { FollowButton } from "@/components/follow-button";
+import { ProfileSummaryTabs } from "@/components/profile-summary-tabs";
 import { TripCard } from "@/components/trip-card";
 import { UserProfileHeader } from "@/components/user-profile-header";
+import { PUBLISHED_TRIPS_EVENT, readPublishedTrips } from "@/lib/published-trips";
 import { PublishedTrip, UserProfile } from "@/lib/types";
+import { useAuth } from "@/providers/auth-provider";
 import { useFollowing } from "@/providers/following-provider";
 
 export function ProfilePageClient({
   profile,
   profileTrips,
-  profilePhotos,
+  profilePhotos
 }: {
   profile: UserProfile;
   profileTrips: PublishedTrip[];
   profilePhotos: string[];
 }) {
+  const { user } = useAuth();
   const { currentUserId, followingMap } = useFollowing();
+  const [localTrips, setLocalTrips] = useState<PublishedTrip[]>([]);
   const isOwnProfile = profile.id === currentUserId;
   const followersCount = Object.values(followingMap).filter((ids) => ids.includes(profile.id)).length;
   const followingCount = (followingMap[profile.id] ?? []).length;
 
+  useEffect(() => {
+    const sync = () => setLocalTrips(readPublishedTrips());
+    sync();
+
+    window.addEventListener(PUBLISHED_TRIPS_EVENT, sync);
+    window.addEventListener("storage", sync);
+
+    return () => {
+      window.removeEventListener(PUBLISHED_TRIPS_EVENT, sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
+
+  const mergedTrips = useMemo(
+    () => {
+      const ownLocalTrips = localTrips.filter((trip) => trip.author.id === profile.id);
+      const visibleLocalTrips = isOwnProfile
+        ? ownLocalTrips
+        : ownLocalTrips.filter((trip) => trip.publicVisibility);
+
+      return [...visibleLocalTrips, ...profileTrips];
+    },
+    [isOwnProfile, localTrips, profile.id, profileTrips]
+  );
+  const mergedPhotosCount = useMemo(
+    () => {
+      const ownLocalTrips = localTrips.filter((trip) => trip.author.id === profile.id);
+      const visibleLocalTrips = isOwnProfile
+        ? ownLocalTrips
+        : ownLocalTrips.filter((trip) => trip.publicVisibility);
+
+      return profilePhotos.length + visibleLocalTrips.reduce((count, trip) => count + trip.photos.length, 0);
+    },
+    [isOwnProfile, localTrips, profile.id, profilePhotos.length]
+  );
+
   return (
     <div className="space-y-8">
-      <UserProfileHeader profile={profile}>
-        <FollowButton targetUserId={profile.id} />
+      <UserProfileHeader profile={profile} tripCountOverride={mergedTrips.length}>
+        {isOwnProfile || user?.id === profile.id ? (
+          <Link
+            href="/perfil/editar"
+            className="rounded-full border border-border px-4 py-2 text-sm font-medium text-text transition hover:bg-background/70"
+          >
+            Editar perfil
+          </Link>
+        ) : (
+          <FollowButton targetUserId={profile.id} />
+        )}
       </UserProfileHeader>
 
-      <section className="grid grid-cols-4 gap-2 sm:gap-3 md:gap-4">
-        <Link href={`/perfil/${profile.username}`} className="rounded-[20px] border border-border bg-surface p-3 transition hover:bg-surfaceAlt/70 sm:rounded-[24px] sm:p-4">
-          <p className="text-[11px] text-muted sm:text-xs">viagens</p>
-          <p className="mt-1 inline-flex items-center gap-1.5 text-lg font-semibold text-text sm:mt-2 sm:gap-2 sm:text-2xl">
-            <Route size={14} className="sm:h-[18px] sm:w-[18px]" />
-            {profileTrips.length}
-          </p>
-        </Link>
-        <Link href={`/perfil/${profile.username}/fotos`} className="rounded-[20px] border border-border bg-surface p-3 transition hover:bg-surfaceAlt/70 sm:rounded-[24px] sm:p-4">
-          <p className="text-[11px] text-muted sm:text-xs">fotos</p>
-          <p className="mt-1 inline-flex items-center gap-1.5 text-lg font-semibold text-text sm:mt-2 sm:gap-2 sm:text-2xl">
-            <Camera size={14} className="sm:h-[18px] sm:w-[18px]" />
-            {profilePhotos.length}
-          </p>
-        </Link>
-        <Link href={`/perfil/${profile.username}/seguidores`} className="rounded-[20px] border border-border bg-surface p-3 transition hover:bg-surfaceAlt/70 sm:rounded-[24px] sm:p-4">
-          <p className="text-[11px] text-muted sm:text-xs">seguidores</p>
-          <p className="mt-1 inline-flex items-center gap-1.5 text-lg font-semibold text-text sm:mt-2 sm:gap-2 sm:text-2xl">
-            <Users size={14} className="sm:h-[18px] sm:w-[18px]" />
-            {followersCount}
-          </p>
-        </Link>
-        <Link href={`/perfil/${profile.username}/seguindo`} className="rounded-[20px] border border-border bg-surface p-3 transition hover:bg-surfaceAlt/70 sm:rounded-[24px] sm:p-4">
-          <p className="text-[11px] text-muted sm:text-xs">seguindo</p>
-          <p className="mt-1 inline-flex items-center gap-1.5 text-lg font-semibold text-text sm:mt-2 sm:gap-2 sm:text-2xl">
-            <Users size={14} className="sm:h-[18px] sm:w-[18px]" />
-            {followingCount}
-          </p>
-        </Link>
-      </section>
+      <ProfileSummaryTabs
+        username={profile.username}
+        activeTab="overview"
+        tripCount={mergedTrips.length}
+        photoCount={mergedPhotosCount}
+        followersCount={followersCount}
+        followingCount={followingCount}
+      />
 
       <section id="viagens" className="space-y-5">
         <div>
@@ -67,9 +95,9 @@ export function ProfilePageClient({
             {isOwnProfile ? "Suas viagens publicadas" : `Roteiros compartilhados por ${profile.name}`}
           </h2>
         </div>
-        {profileTrips.length > 0 ? (
+        {mergedTrips.length > 0 ? (
           <div className="grid gap-5 xl:grid-cols-2">
-            {profileTrips.map((trip) => (
+            {mergedTrips.map((trip) => (
               <TripCard key={trip.id} trip={trip} />
             ))}
           </div>
