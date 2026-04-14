@@ -17,6 +17,7 @@ export interface UserProfile {
   username: string;
   name: string;
   email: string;
+  isAdmin?: boolean;
   avatarUrl: string;
   coverUrl?: string;
   city: string;

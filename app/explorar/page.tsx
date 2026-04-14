@@ -1,6 +1,8 @@
 import { ExploreFeedClient } from "@/components/explore-feed-client";
 import { getExplorePageData } from "@/lib/server/site-data";
 
+export const revalidate = 0;
+
 export default async function ExplorePage({
   searchParams
 }: {

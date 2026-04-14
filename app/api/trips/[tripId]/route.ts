@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { isAdminEmail } from "@/lib/admin";
 import {
   deleteOwnedTrip,
   getOwnedTripForEditing,
@@ -33,7 +34,11 @@ export async function GET(request: NextRequest, context: { params: Promise<{ tri
   try {
     const user = await getAuthenticatedUser(request);
     const { tripId } = await context.params;
-    const trip = await getOwnedTripForEditing({ tripId, userId: user.id });
+    const trip = await getOwnedTripForEditing({
+      tripId,
+      userId: user.id,
+      isAdmin: isAdminEmail(user.email)
+    });
 
     if (!trip) {
       return NextResponse.json({ error: "Viagem nao encontrada." }, { status: 404 });
@@ -58,7 +63,8 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ t
       await updateTripVisibility({
         tripId,
         userId: user.id,
-        visibility: body.visibility
+        visibility: body.visibility,
+        isAdmin: isAdminEmail(user.email)
       });
 
       return NextResponse.json({ ok: true });
@@ -96,7 +102,11 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
     const user = await getAuthenticatedUser(request);
     const { tripId } = await context.params;
 
-    await deleteOwnedTrip({ tripId, userId: user.id });
+    await deleteOwnedTrip({
+      tripId,
+      userId: user.id,
+      isAdmin: isAdminEmail(user.email)
+    });
 
     return NextResponse.json({ ok: true });
   } catch (error) {

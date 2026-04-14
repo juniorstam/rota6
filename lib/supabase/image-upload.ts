@@ -2,8 +2,6 @@
 
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
-const PROFILE_MEDIA_BUCKET = "profile-media";
-
 async function loadImage(file: File) {
   return await new Promise<HTMLImageElement>((resolve, reject) => {
     const image = new Image();
@@ -89,31 +87,35 @@ export async function uploadProfileImage({
     throw new Error("Sua sessao expirou. Entre novamente antes de enviar imagens.");
   }
 
+  const {
+    data: { session }
+  } = await supabase.auth.getSession();
+
+  if (!session?.access_token) {
+    throw new Error("Sua sessao expirou. Entre novamente antes de enviar imagens.");
+  }
+
   const optimizedFile =
     type === "avatar"
       ? await optimizeImageFile(file, { maxWidth: 512, maxHeight: 512, quality: 0.82 })
       : await optimizeImageFile(file, { maxWidth: 1600, maxHeight: 900, quality: 0.84 });
+  const formData = new FormData();
+  formData.append("type", type);
+  formData.append("file", optimizedFile);
 
-  const filePath = `${type}s/${user.id}/${Date.now()}.jpg`;
-  const { error } = await supabase.storage.from(PROFILE_MEDIA_BUCKET).upload(filePath, optimizedFile, {
-    cacheControl: "3600",
-    upsert: true,
-    contentType: "image/jpeg"
+  const response = await fetch("/api/profile-media", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${session.access_token}`
+    },
+    body: formData
   });
 
-  if (error) {
-    throw new Error(
-      error.message.includes("Bucket not found")
-        ? "O bucket profile-media ainda nao existe no Supabase Storage."
-        : error.message.includes("row-level security")
-          ? "Sua sessao nao tem permissao para enviar esta imagem. Saia e entre novamente para atualizar a autenticacao."
-        : error.message
-    );
+  const payload = (await response.json().catch(() => null)) as { publicUrl?: string; error?: string } | null;
+
+  if (!response.ok || !payload?.publicUrl) {
+    throw new Error(payload?.error ?? "Nao foi possivel enviar a imagem agora.");
   }
 
-  const {
-    data: { publicUrl }
-  } = supabase.storage.from(PROFILE_MEDIA_BUCKET).getPublicUrl(filePath);
-
-  return publicUrl;
+  return payload.publicUrl;
 }

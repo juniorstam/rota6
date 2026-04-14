@@ -1,6 +1,8 @@
 import { BikersDirectoryClient } from "@/components/bikers-directory-client";
 import { getBikersPageData } from "@/lib/server/site-data";
 
+export const revalidate = 0;
+
 export default async function BikersPage({
   searchParams
 }: {

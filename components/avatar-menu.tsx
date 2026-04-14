@@ -109,14 +109,16 @@ export function AvatarMenu() {
               <Users size={16} />
               Seguindo
             </Link>
-            <Link
-              href="/admin"
-              className="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm text-text transition hover:bg-background/60"
-              onClick={() => setOpen(false)}
-            >
-              <Settings size={16} />
-              Configurações
-            </Link>
+            {activeUser.isAdmin ? (
+              <Link
+                href="/admin"
+                className="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm text-text transition hover:bg-background/60"
+                onClick={() => setOpen(false)}
+              >
+                <Settings size={16} />
+                Painel admin
+              </Link>
+            ) : null}
             <button
               type="button"
               onClick={() => {

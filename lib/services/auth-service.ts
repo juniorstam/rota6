@@ -1,4 +1,5 @@
 import { users } from "@/lib/mock-data";
+import { isAdminEmail } from "@/lib/admin";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { mapProfileRowToUserProfile } from "@/lib/supabase/mappers";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -77,11 +78,15 @@ async function ensureSupabaseProfile(authUser: {
 }
 
 async function syncSessionProfile(profile: UserProfile) {
+  const nextProfile = {
+    ...profile,
+    isAdmin: isAdminEmail(profile.email)
+  };
   if (!hasSupabaseEnv()) {
-    upsertLocalUser(profile);
+    upsertLocalUser(nextProfile);
   }
-  saveSession(profile);
-  return profile;
+  saveSession(nextProfile);
+  return nextProfile;
 }
 
 function stripLargeInlineImage(value?: string) {
@@ -174,7 +179,7 @@ export const authService = {
         throw new Error("Nao foi possivel criar a conta agora.");
       }
 
-      const profile = await ensureSupabaseProfile({
+      await ensureSupabaseProfile({
         id: userId,
         email,
         user_metadata: {
@@ -183,13 +188,27 @@ export const authService = {
           username: nextUsername
         }
       });
+
+      if (!data.session) {
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password: password ?? ""
+        });
+
+        if (signInError) {
+          throw new Error(
+            "Conta criada, mas a sessao nao foi iniciada automaticamente. Confirme o e-mail se necessario e entre pela tela de login."
+          );
+        }
+      }
+
+      const profile = await getProfileFromSupabase(userId);
       if (!profile) {
         const fallbackProfile = createBlankProfile({
           email,
           name: name ?? "Novo motociclista",
           username: nextUsername
         });
-
         fallbackProfile.id = userId;
         return syncSessionProfile(fallbackProfile);
       }

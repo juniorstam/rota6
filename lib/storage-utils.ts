@@ -7,6 +7,8 @@ const KNOWN_STORAGE_KEYS = [
   "rota6.published-trips.v1"
 ] as const;
 
+const LEGACY_LOCAL_MODE_KEYS = ["rota6-local-users", "rota6.published-trips.v1"] as const;
+
 function sanitizeValue(value: unknown): unknown {
   if (typeof value === "string") {
     if (value.startsWith("data:image/") && value.length > 50_000) {
@@ -47,6 +49,16 @@ export function cleanupKnownStorageEntries() {
     } catch {
       window.localStorage.removeItem(key);
     }
+  }
+}
+
+export function clearLegacyLocalModeData() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  for (const key of LEGACY_LOCAL_MODE_KEYS) {
+    window.localStorage.removeItem(key);
   }
 }
 

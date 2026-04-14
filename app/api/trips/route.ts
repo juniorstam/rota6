@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { isAdminEmail } from "@/lib/admin";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { upsertTrip } from "@/lib/repositories/trip-write-service";
 
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
       galleryPhotos: Array.isArray(body.galleryPhotos) ? body.galleryPhotos : []
     });
 
-    return NextResponse.json(result);
+    return NextResponse.json({ ...result, isAdmin: isAdminEmail(user.email) });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Nao foi possivel publicar a viagem.";
     const status = message.includes("Sessao") ? 401 : 400;

@@ -1,4 +1,5 @@
 import { PublishedTrip, UserProfile } from "@/lib/types";
+import { isAdminEmail } from "@/lib/admin";
 
 interface ProfileRow {
   id: string;
@@ -96,6 +97,7 @@ export function mapProfileRowToUserProfile(row: ProfileRow): UserProfile {
   return {
     id: row.id,
     email: row.email,
+    isAdmin: isAdminEmail(row.email),
     username: row.username,
     name: row.name,
     avatarUrl: row.avatar_url || DEFAULT_AVATAR_URL,

@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 import { authService, getStoredSession, type AuthPayload } from "@/lib/services/auth-service";
-import { cleanupKnownStorageEntries } from "@/lib/storage-utils";
+import { cleanupKnownStorageEntries, clearLegacyLocalModeData } from "@/lib/storage-utils";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { UserProfile } from "@/lib/types";
@@ -39,6 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       try {
+        clearLegacyLocalModeData();
         const profile = await authService.getCurrentSessionProfile();
         if (mounted) {
           setUser(profile);
@@ -80,10 +81,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user,
       loading,
       async login(payload) {
+        setUser(null);
         const session = await authService.login(payload);
         setUser(session);
       },
       async signup(payload) {
+        setUser(null);
         const session = await authService.signup(payload);
         setUser(session);
       },

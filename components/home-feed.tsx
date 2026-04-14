@@ -41,6 +41,10 @@ export function HomeFeed({
 
   const visibleAuthorIds =
     currentUserId && user ? Array.from(new Set([currentUserId, ...followingIds])) : followingIds;
+  const allPublicTrips = useMemo(
+    () => (useSupabase ? initialTrips : [...localTrips, ...trips]).filter((trip) => trip.publicVisibility),
+    [initialTrips, localTrips, useSupabase]
+  );
   const followedTrips = useMemo(
     () =>
       (useSupabase ? initialTrips : [...localTrips, ...trips]).filter(
@@ -48,6 +52,7 @@ export function HomeFeed({
       ),
     [initialTrips, localTrips, useSupabase, visibleAuthorIds]
   );
+  const visibleTrips = followedTrips.length > 0 ? followedTrips : allPublicTrips;
 
   if (loading) {
     return <div className="mx-auto max-w-3xl space-y-4" />;
@@ -55,8 +60,8 @@ export function HomeFeed({
 
   return (
     <div className="mx-auto max-w-3xl space-y-4">
-      {followedTrips.length > 0 ? (
-        followedTrips.map((trip) => <RouteFeedCard key={trip.id} trip={trip} />)
+      {visibleTrips.length > 0 ? (
+        visibleTrips.map((trip) => <RouteFeedCard key={trip.id} trip={trip} />)
       ) : (
         <div className="rounded-[24px] border border-dashed border-border bg-surface p-6 text-sm text-muted">
           {user ? (

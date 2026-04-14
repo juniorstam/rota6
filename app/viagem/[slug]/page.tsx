@@ -1,6 +1,8 @@
 import { TripDetailsClient } from "@/components/trip-details-client";
 import { getTripPageData } from "@/lib/server/site-data";
 
+export const revalidate = 0;
+
 export default async function TripDetailsPage({
   params
 }: {

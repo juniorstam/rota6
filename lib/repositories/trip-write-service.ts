@@ -193,13 +193,15 @@ async function uploadTripPhoto({
 
 export async function getOwnedTripForEditing({
   tripId,
-  userId
+  userId,
+  isAdmin = false
 }: {
   tripId: string;
   userId: string;
+  isAdmin?: boolean;
 }) {
   const supabase = createSupabaseAdminClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from("trips")
     .select(
       `
@@ -228,9 +230,13 @@ export async function getOwnedTripForEditing({
         )
       `
     )
-    .eq("id", tripId)
-    .eq("user_id", userId)
-    .maybeSingle();
+    .eq("id", tripId);
+
+  if (!isAdmin) {
+    query = query.eq("user_id", userId);
+  }
+
+  const { data, error } = await query.maybeSingle();
 
   if (error) {
     throw error;
@@ -397,18 +403,22 @@ export async function upsertTrip(input: UpsertTripInput) {
 export async function updateTripVisibility({
   tripId,
   userId,
-  visibility
+  visibility,
+  isAdmin = false
 }: {
   tripId: string;
   userId: string;
   visibility: TripVisibility;
+  isAdmin?: boolean;
 }) {
   const supabase = createSupabaseAdminClient();
-  const { error } = await supabase
-    .from("trips")
-    .update({ visibility } as never)
-    .eq("id", tripId)
-    .eq("user_id", userId);
+  let query = supabase.from("trips").update({ visibility } as never).eq("id", tripId);
+
+  if (!isAdmin) {
+    query = query.eq("user_id", userId);
+  }
+
+  const { error } = await query;
 
   if (error) {
     throw error;
@@ -417,13 +427,21 @@ export async function updateTripVisibility({
 
 export async function deleteOwnedTrip({
   tripId,
-  userId
+  userId,
+  isAdmin = false
 }: {
   tripId: string;
   userId: string;
+  isAdmin?: boolean;
 }) {
   const supabase = createSupabaseAdminClient();
-  const { error } = await supabase.from("trips").delete().eq("id", tripId).eq("user_id", userId);
+  let query = supabase.from("trips").delete().eq("id", tripId);
+
+  if (!isAdmin) {
+    query = query.eq("user_id", userId);
+  }
+
+  const { error } = await query;
 
   if (error) {
     throw error;

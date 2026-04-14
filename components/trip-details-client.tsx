@@ -79,7 +79,7 @@ export function TripDetailsClient({
     [hydrated, slug, username, localTrips, useSupabase]
   );
   const isOwnLocalTrip = Boolean(localTripRecord && user && localTripRecord.author.id === user.id);
-  const isOwnSupabaseTrip = Boolean(useSupabase && user && trip && trip.author.id === user.id);
+  const isOwnSupabaseTrip = Boolean(useSupabase && user && trip && (trip.author.id === user.id || user.isAdmin));
 
   function handleTogglePublished() {
     if (useSupabase && trip) {
