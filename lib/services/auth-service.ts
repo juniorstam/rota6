@@ -34,6 +34,48 @@ async function getProfileFromSupabase(userId: string) {
   return data ? mapProfileRowToUserProfile(data) : null;
 }
 
+async function ensureSupabaseProfile(authUser: {
+  id: string;
+  email?: string | null;
+  user_metadata?: Record<string, unknown> | null;
+}) {
+  const existingProfile = await getProfileFromSupabase(authUser.id);
+  if (existingProfile) {
+    return existingProfile;
+  }
+
+  const email = authUser.email ?? "";
+  const metadata = authUser.user_metadata ?? {};
+  const baseUsername = normalizeUsername(
+    String(metadata.username ?? email.split("@")[0] ?? "motociclista")
+  );
+  const fallbackUsername = baseUsername || `biker${authUser.id.slice(0, 6)}`;
+  const name = String(metadata.name ?? email.split("@")[0] ?? "Novo motociclista");
+
+  const supabase = getSupabaseBrowserClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .upsert(
+      {
+        id: authUser.id,
+        email,
+        username: fallbackUsername,
+        name,
+        contact_email: email,
+        travel_style: "solo"
+      } as never,
+      { onConflict: "id" }
+    )
+    .select("*")
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return mapProfileRowToUserProfile(data);
+}
+
 async function syncSessionProfile(profile: UserProfile) {
   if (!hasSupabaseEnv()) {
     upsertLocalUser(profile);
@@ -75,10 +117,7 @@ export const authService = {
         throw new Error("Nao foi possivel identificar o usuario autenticado.");
       }
 
-      const profile = await getProfileFromSupabase(userId);
-      if (!profile) {
-        throw new Error("Perfil nao encontrado para esta conta.");
-      }
+      const profile = await ensureSupabaseProfile(data.user);
 
       return syncSessionProfile(profile);
     }
@@ -135,7 +174,15 @@ export const authService = {
         throw new Error("Nao foi possivel criar a conta agora.");
       }
 
-      const profile = await getProfileFromSupabase(userId);
+      const profile = await ensureSupabaseProfile({
+        id: userId,
+        email,
+        user_metadata: {
+          ...(data.user?.user_metadata ?? {}),
+          name: name ?? "Novo motociclista",
+          username: nextUsername
+        }
+      });
       if (!profile) {
         const fallbackProfile = createBlankProfile({
           email,
@@ -197,7 +244,7 @@ export const authService = {
 
     const profile = await getProfileFromSupabase(session.user.id);
     if (!profile) {
-      return null;
+      return syncSessionProfile(await ensureSupabaseProfile(session.user));
     }
 
     return syncSessionProfile(profile);
@@ -237,12 +284,17 @@ export const authService = {
       contact_email: profile.contactEmail ?? profile.email,
       phone: profile.phone ?? null,
       instagram_handle: profile.instagramHandle ?? null
-    } as never;
+    };
 
     const updatePromise = supabase
       .from("profiles")
-      .update(profileUpdates)
-      .eq("id", user.id)
+      .upsert(
+        {
+          id: user.id,
+          ...profileUpdates
+        } as never,
+        { onConflict: "id" }
+      )
       .select("*")
       .single();
 

@@ -38,7 +38,15 @@ export function ProfileRouteClient({
   const { followingMap } = useFollowing();
   const [profile, setProfile] = useState<UserProfile | null>(() => {
     if (useSupabase) {
-      return initialProfile;
+      if (initialProfile) {
+        return initialProfile;
+      }
+
+      if (user && normalizeUsername(user.username) === normalizeUsername(username)) {
+        return user;
+      }
+
+      return null;
     }
 
     if (user && normalizeUsername(user.username) === normalizeUsername(username)) {
@@ -51,7 +59,10 @@ export function ProfileRouteClient({
 
   useEffect(() => {
     if (useSupabase) {
-      setProfile(initialProfile);
+      setProfile(
+        initialProfile ??
+          (user && normalizeUsername(user.username) === normalizeUsername(username) ? user : null)
+      );
       setLocalTrips(initialTrips);
       return;
     }
