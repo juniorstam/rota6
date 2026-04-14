@@ -1,6 +1,7 @@
 "use client";
 
 import { TripRoadLevel, TripType } from "@/lib/types";
+import { safeSetLocalStorageItem } from "@/lib/storage-utils";
 
 export const PUBLISH_DRAFTS_STORAGE_KEY = "rota6.publish-drafts.v1";
 export const PUBLISH_DRAFTS_EVENT = "rota6:publish-drafts-updated";
@@ -58,7 +59,7 @@ export function readPublishDrafts() {
 }
 
 function saveAllDrafts(records: PublishDraftRecord[]) {
-  window.localStorage.setItem(PUBLISH_DRAFTS_STORAGE_KEY, JSON.stringify(records));
+  safeSetLocalStorageItem(PUBLISH_DRAFTS_STORAGE_KEY, records);
   window.dispatchEvent(new Event(PUBLISH_DRAFTS_EVENT));
 }
 

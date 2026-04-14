@@ -1,4 +1,5 @@
 import { users } from "@/lib/mock-data";
+import { safeSetLocalStorageItem } from "@/lib/storage-utils";
 import { UserProfile } from "@/lib/types";
 
 export const SESSION_STORAGE_KEY = "rota6-session";
@@ -95,7 +96,7 @@ export function saveSession(user: UserProfile) {
     return;
   }
 
-  window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(user));
+  safeSetLocalStorageItem(SESSION_STORAGE_KEY, user);
   dispatchProfilesEvent();
 }
 
@@ -127,7 +128,7 @@ export function readLocalUsers() {
 }
 
 function saveLocalUsers(nextUsers: UserProfile[]) {
-  window.localStorage.setItem(LOCAL_USERS_STORAGE_KEY, JSON.stringify(nextUsers));
+  safeSetLocalStorageItem(LOCAL_USERS_STORAGE_KEY, nextUsers);
   dispatchProfilesEvent();
 }
 

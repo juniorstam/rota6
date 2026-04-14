@@ -1,6 +1,7 @@
 "use client";
 
 import { PublishedTrip, TripRoadLevel, TripType, UserProfile } from "@/lib/types";
+import { safeSetLocalStorageItem } from "@/lib/storage-utils";
 
 export const PUBLISHED_TRIPS_STORAGE_KEY = "rota6.published-trips.v1";
 export const PUBLISHED_TRIPS_EVENT = "rota6:published-trips-updated";
@@ -98,7 +99,7 @@ export function savePublishedTripRecord(record: PublishedTripRecord) {
   }
 
   const existing = readPublishedTripRecords();
-  window.localStorage.setItem(PUBLISHED_TRIPS_STORAGE_KEY, JSON.stringify([record, ...existing]));
+  safeSetLocalStorageItem(PUBLISHED_TRIPS_STORAGE_KEY, [record, ...existing]);
   window.dispatchEvent(new Event(PUBLISHED_TRIPS_EVENT));
 }
 
@@ -112,7 +113,7 @@ export function updatePublishedTripRecord(
 
   const existing = readPublishedTripRecords();
   const nextRecords = existing.map((record) => (record.id === tripId ? updater(record) : record));
-  window.localStorage.setItem(PUBLISHED_TRIPS_STORAGE_KEY, JSON.stringify(nextRecords));
+  safeSetLocalStorageItem(PUBLISHED_TRIPS_STORAGE_KEY, nextRecords);
   window.dispatchEvent(new Event(PUBLISHED_TRIPS_EVENT));
 }
 
@@ -123,7 +124,7 @@ export function deletePublishedTripRecord(tripId: string) {
 
   const existing = readPublishedTripRecords();
   const nextRecords = existing.filter((record) => record.id !== tripId);
-  window.localStorage.setItem(PUBLISHED_TRIPS_STORAGE_KEY, JSON.stringify(nextRecords));
+  safeSetLocalStorageItem(PUBLISHED_TRIPS_STORAGE_KEY, nextRecords);
   window.dispatchEvent(new Event(PUBLISHED_TRIPS_EVENT));
 }
 

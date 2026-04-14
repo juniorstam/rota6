@@ -3,6 +3,9 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 import { authService, getStoredSession, type AuthPayload } from "@/lib/services/auth-service";
+import { cleanupKnownStorageEntries } from "@/lib/storage-utils";
+import { hasSupabaseEnv } from "@/lib/supabase/env";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { UserProfile } from "@/lib/types";
 
 interface AuthContextValue {
@@ -23,8 +26,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setUser(getStoredSession());
-    setLoading(false);
+    let mounted = true;
+    cleanupKnownStorageEntries();
+
+    async function bootstrap() {
+      if (!hasSupabaseEnv()) {
+        if (mounted) {
+          setUser(getStoredSession());
+          setLoading(false);
+        }
+        return;
+      }
+
+      try {
+        const profile = await authService.getCurrentSessionProfile();
+        if (mounted) {
+          setUser(profile);
+          setLoading(false);
+        }
+      } catch {
+        if (mounted) {
+          setUser(null);
+          setLoading(false);
+        }
+      }
+    }
+
+    bootstrap();
+
+    if (!hasSupabaseEnv()) {
+      return () => {
+        mounted = false;
+      };
+    }
+
+    const {
+      data: { subscription }
+    } = getSupabaseBrowserClient().auth.onAuthStateChange(async () => {
+      const profile = await authService.getCurrentSessionProfile();
+      if (mounted) {
+        setUser(profile);
+      }
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const value = useMemo<AuthContextValue>(
@@ -51,7 +99,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(nextUser);
       },
       refreshUser() {
-        setUser(getStoredSession());
+        void authService.getCurrentSessionProfile().then((profile) => {
+          setUser(profile);
+        });
       }
     }),
     [loading, user]

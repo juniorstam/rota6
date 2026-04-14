@@ -9,9 +9,10 @@ import {
   buildMotorcycleLabel,
   getDefaultCoverUrl,
   normalizeUsername,
-  upsertLocalUser,
   usernameExists
 } from "@/lib/local-profiles";
+import { authService } from "@/lib/services/auth-service";
+import { uploadProfileImage } from "@/lib/supabase/image-upload";
 import { useAuth } from "@/providers/auth-provider";
 
 function fileToDataUrl(file: File) {
@@ -70,6 +71,8 @@ export function ProfileEditorForm() {
   const [motorcycleModel, setMotorcycleModel] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [coverUrl, setCoverUrl] = useState("");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -91,6 +94,8 @@ export function ProfileEditorForm() {
     setMotorcycleModel(user.motorcycleModel ?? "");
     setAvatarUrl(user.avatarUrl ?? "");
     setCoverUrl(user.coverUrl ?? getDefaultCoverUrl());
+    setAvatarFile(null);
+    setCoverFile(null);
   }, [user]);
 
   const motorcyclePreview = useMemo(
@@ -109,10 +114,12 @@ export function ProfileEditorForm() {
 
     const dataUrl = await fileToDataUrl(file);
     if (target === "avatar") {
+      setAvatarFile(file);
       setAvatarUrl(dataUrl);
       return;
     }
 
+    setCoverFile(file);
     setCoverUrl(dataUrl);
   }
 
@@ -136,6 +143,37 @@ export function ProfileEditorForm() {
     setSaving(true);
     setMessage("");
 
+    let nextAvatarUrl = avatarUrl || user.avatarUrl;
+    let nextCoverUrl = coverUrl || getDefaultCoverUrl();
+
+    try {
+      if (avatarFile) {
+        setMessage("Otimizando e enviando sua foto de perfil...");
+        nextAvatarUrl = await uploadProfileImage({
+          userId: user.id,
+          file: avatarFile,
+          type: "avatar"
+        });
+      }
+
+      if (coverFile) {
+        setMessage("Otimizando e enviando sua imagem de capa...");
+        nextCoverUrl = await uploadProfileImage({
+          userId: user.id,
+          file: coverFile,
+          type: "cover"
+        });
+      }
+    } catch (error) {
+      setSaving(false);
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Nao foi possivel preparar as imagens para salvar o perfil agora."
+      );
+      return;
+    }
+
     const nextUser = {
       ...user,
       name: name.trim() || user.name,
@@ -150,16 +188,26 @@ export function ProfileEditorForm() {
       motorcycleBrand: motorcycleBrand.trim(),
       motorcycleModel: motorcycleModel.trim(),
       motorcycle: buildMotorcycleLabel(motorcycleBrand, motorcycleModel),
-      avatarUrl: avatarUrl || user.avatarUrl,
-      coverUrl: coverUrl || getDefaultCoverUrl()
+      avatarUrl: nextAvatarUrl,
+      coverUrl: nextCoverUrl
     };
 
-    upsertLocalUser(nextUser);
-    updateUser(nextUser);
-    setSaving(false);
-    setMessage("Perfil salvo com sucesso.");
-    router.push(`/perfil/${nextUser.username}`);
-    router.refresh();
+    try {
+      setMessage("Salvando dados do perfil...");
+      const savedProfile = await authService.updateProfile(nextUser);
+      updateUser(savedProfile);
+      setSaving(false);
+      setAvatarFile(null);
+      setCoverFile(null);
+      setAvatarUrl(savedProfile.avatarUrl ?? "");
+      setCoverUrl(savedProfile.coverUrl ?? getDefaultCoverUrl());
+      setMessage("Perfil salvo com sucesso.");
+      router.push(`/perfil/${savedProfile.username}`);
+      router.refresh();
+    } catch (error) {
+      setSaving(false);
+      setMessage(error instanceof Error ? error.message : "Nao foi possivel salvar o perfil agora.");
+    }
   }
 
   if (loading) {
@@ -377,6 +425,7 @@ export function ProfileEditorForm() {
         <div className="flex flex-wrap items-center gap-3">
           <button
             type="submit"
+            disabled={saving}
             className="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-3 text-sm font-semibold text-background"
           >
             <Save size={16} />

@@ -8,7 +8,7 @@ import { ProfileConnectionsClient } from "@/components/profile-connections-clien
 import { ProfilePageClient } from "@/components/profile-page-client";
 import { ProfileSummaryTabs } from "@/components/profile-summary-tabs";
 import { UserProfileHeader } from "@/components/user-profile-header";
-import { LOCAL_PROFILES_EVENT, findProfileByUsername } from "@/lib/local-profiles";
+import { LOCAL_PROFILES_EVENT, findProfileByUsername, normalizeUsername } from "@/lib/local-profiles";
 import { getProfileByUsername, getProfilePhotos, getProfileTrips } from "@/lib/profile-data";
 import { PUBLISHED_TRIPS_EVENT, readPublishedTrips } from "@/lib/published-trips";
 import { PublishedTrip, UserProfile } from "@/lib/types";
@@ -26,12 +26,21 @@ export function ProfileRouteClient({
 }) {
   const { user } = useAuth();
   const { followingMap } = useFollowing();
-  const [profile, setProfile] = useState<UserProfile | null>(() => getProfileByUsername(username));
+  const [profile, setProfile] = useState<UserProfile | null>(() => {
+    if (user && normalizeUsername(user.username) === normalizeUsername(username)) {
+      return user;
+    }
+
+    return findProfileByUsername(username) ?? getProfileByUsername(username);
+  });
   const [localTrips, setLocalTrips] = useState(() => readPublishedTrips());
 
   useEffect(() => {
     const sync = () => {
-      const nextProfile = findProfileByUsername(username) ?? getProfileByUsername(username);
+      const nextProfile =
+        user && normalizeUsername(user.username) === normalizeUsername(username)
+          ? user
+          : findProfileByUsername(username) ?? getProfileByUsername(username);
       setProfile(nextProfile);
       setLocalTrips(readPublishedTrips());
     };

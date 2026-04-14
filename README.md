@@ -6,7 +6,7 @@ MVP web responsivo da Rota 6, combinando planejamento de viagem, apoio de estrad
 
 - Next.js 15 + TypeScript
 - Tailwind CSS
-- Arquitetura pronta para Supabase/PostgreSQL
+- Supabase + PostgreSQL
 - Serviços desacoplados para auth e mapas
 
 ## Estrutura
@@ -45,8 +45,10 @@ MVP web responsivo da Rota 6, combinando planejamento de viagem, apoio de estrad
 - `components/`: blocos reutilizáveis com foco em mobile-first e visual premium.
 - `lib/types.ts`: contratos de domínio compartilhados para facilitar reaproveitamento em web, backend e app mobile.
 - `lib/services/map-service.ts`: interface `getRoute()`, `searchPlace()` e `getPlacesAlongRoute()` para trocar o provedor depois sem reescrever a regra de negócio.
-- `providers/auth-provider.tsx`: autenticação mockada em `localStorage`, pensada para substituir depois por Supabase Auth.
-- `db/schema.sql`: modelagem relacional do MVP, com entidades centrais, constraints e índices básicos.
+- `providers/auth-provider.tsx`: hoje ainda usa armazenamento local, mas já está preparado para migrar para Supabase Auth.
+- `lib/supabase/*`: clientes e utilitários base para conectar o app ao Supabase.
+- `lib/repositories/*`: primeira camada de acesso a dados para migrar do navegador para banco sem espalhar queries no app.
+- `db/schema.sql`: modelagem inicial alinhada ao Supabase (`auth.users`, `profiles`, `trips`, RLS e índices).
 
 ## Como rodar localmente
 
@@ -78,30 +80,35 @@ cp .env.example .env.local
 
 Para habilitar busca real de endereços, geocoding reverso, cálculo de rota e mapa estático com traçado:
 
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
 - `MAPBOX_ACCESS_TOKEN`
 - `MAPBOX_STYLE_OWNER`
 - `MAPBOX_STYLE_ID`
 
-Sem token, o app continua funcionando em modo demo.
+Sem Supabase e Mapbox, o app continua funcionando em modo demo/local.
 
 ## Credenciais de demonstração
 
 - E-mail: `junior@rota6.dev`
 - Senha: `123456`
 
-O MVP atual usa autenticação mockada em `localStorage`.
+O MVP atual ainda usa autenticação mockada em `localStorage`, mas a base de migração para Supabase já está preparada.
 
 ## Banco de dados
 
 - Schema inicial em [db/schema.sql](/Users/juniorstambassi/Documents/Route 6/db/schema.sql)
 - Seed base em [db/seed.sql](/Users/juniorstambassi/Documents/Route 6/db/seed.sql)
 
-Sugestão de evolução:
+Ordem recomendada de evolução:
 
-- conectar Supabase Auth em `providers/auth-provider.tsx`
-- migrar `lib/mock-data.ts` para consultas reais
-- usar as rotas internas em `app/api/maps/*` para plugar Mapbox no ambiente
-- substituir o modo demo por adapter persistente de mapas e storage
+1. criar projeto Supabase e aplicar `db/schema.sql`
+2. configurar envs em `.env.local` e na Vercel
+3. conectar Supabase Auth em `providers/auth-provider.tsx`
+4. migrar perfis e viagens para `lib/repositories/*`
+5. trocar fotos locais por Supabase Storage
+6. conectar Mapbox real nas rotas `app/api/maps/*`
 
 ## Roadmap V2
 
