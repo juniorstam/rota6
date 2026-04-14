@@ -16,6 +16,7 @@ import {
   readPublishedTrips,
   updatePublishedTripRecord
 } from "@/lib/published-trips";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { PublishedTrip } from "@/lib/types";
 import { formatDistance, formatDuration } from "@/lib/utils";
 import { useAuth } from "@/providers/auth-provider";
@@ -78,8 +79,50 @@ export function TripDetailsClient({
     [hydrated, slug, username, localTrips, useSupabase]
   );
   const isOwnLocalTrip = Boolean(localTripRecord && user && localTripRecord.author.id === user.id);
+  const isOwnSupabaseTrip = Boolean(useSupabase && user && trip && trip.author.id === user.id);
 
   function handleTogglePublished() {
+    if (useSupabase && trip) {
+      void (async () => {
+        try {
+          const supabase = getSupabaseBrowserClient();
+          const {
+            data: { session }
+          } = await supabase.auth.getSession();
+
+          if (!session?.access_token) {
+            throw new Error("Sua sessao expirou. Entre novamente antes de ajustar a publicacao.");
+          }
+
+          const response = await fetch(`/api/trips/${trip.id}`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.access_token}`
+            },
+            body: JSON.stringify({
+              visibility: trip.publicVisibility ? "private" : "public"
+            })
+          });
+          const result = await response.json();
+
+          if (!response.ok) {
+            throw new Error(result.error ?? "Nao foi possivel atualizar a publicacao.");
+          }
+
+          setFeedback(
+            trip.publicVisibility
+              ? "Viagem marcada como não publicada. Ela sai da vitrine pública."
+              : "Viagem marcada como publicada. Ela volta para as vitrines públicas."
+          );
+          router.refresh();
+        } catch (error) {
+          setFeedback(error instanceof Error ? error.message : "Nao foi possivel atualizar a publicacao.");
+        }
+      })();
+      return;
+    }
+
     if (!localTripRecord) {
       return;
     }
@@ -96,6 +139,39 @@ export function TripDetailsClient({
   }
 
   function handleDeleteTrip() {
+    if (useSupabase && trip) {
+      void (async () => {
+        try {
+          const supabase = getSupabaseBrowserClient();
+          const {
+            data: { session }
+          } = await supabase.auth.getSession();
+
+          if (!session?.access_token) {
+            throw new Error("Sua sessao expirou. Entre novamente antes de apagar a publicacao.");
+          }
+
+          const response = await fetch(`/api/trips/${trip.id}`, {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${session.access_token}`
+            }
+          });
+          const result = await response.json();
+
+          if (!response.ok) {
+            throw new Error(result.error ?? "Nao foi possivel apagar a viagem.");
+          }
+
+          router.push(`/perfil/${trip.author.username}`);
+          router.refresh();
+        } catch (error) {
+          setFeedback(error instanceof Error ? error.message : "Nao foi possivel apagar a viagem.");
+        }
+      })();
+      return;
+    }
+
     if (!localTripRecord) {
       return;
     }
@@ -150,10 +226,10 @@ export function TripDetailsClient({
             <p className="mt-3 max-w-3xl text-sm leading-6 text-muted">{trip.summary}</p>
           </div>
 
-          {isOwnLocalTrip && localTripRecord ? (
+          {(isOwnLocalTrip && localTripRecord) || isOwnSupabaseTrip ? (
             <div className="flex flex-wrap gap-3">
               <Link
-                href={`/publicar?edit=${localTripRecord.id}`}
+                href={useSupabase && trip ? `/publicar?edit-online=${trip.id}` : `/publicar?edit=${localTripRecord?.id}`}
                 className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium text-text"
               >
                 <FilePenLine size={16} />

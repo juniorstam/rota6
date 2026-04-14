@@ -89,25 +89,25 @@ export function BikersDirectoryClient({
       {filteredUsers.length > 0 ? (
         <div className="grid gap-5 lg:grid-cols-2">
           {filteredUsers.map((user) => {
-          const baseTrips = useSupabase ? initialTrips : trips;
-          const mockTripCount = baseTrips.filter((trip) => trip.author.id === user.id).length;
-          const mockPhotoCount = baseTrips
-            .filter((trip) => trip.author.id === user.id)
-            .reduce((count, trip) => count + trip.photos.length, 0);
+            const baseTrips = useSupabase ? initialTrips : trips;
+            const baseTripCount = baseTrips.filter((trip) => trip.author.id === user.id).length;
+            const basePhotoCount = baseTrips
+              .filter((trip) => trip.author.id === user.id)
+              .reduce((count, trip) => count + trip.photos.length, 0);
 
-          const ownLocalTrips = useSupabase
-            ? []
-            : localTrips.filter((trip) => trip.author.id === user.id && trip.publicVisibility);
-          const localPhotoCount = ownLocalTrips.reduce((count, trip) => count + trip.photos.length, 0);
+            const ownLocalTrips = useSupabase
+              ? []
+              : localTrips.filter((trip) => trip.author.id === user.id && trip.publicVisibility);
+            const localPhotoCount = ownLocalTrips.reduce((count, trip) => count + trip.photos.length, 0);
 
-          return (
-            <BikerCard
-              key={user.id}
-              user={user}
-              tripCount={mockTripCount + ownLocalTrips.length}
-              photoCount={mockPhotoCount + localPhotoCount}
-            />
-          );
+            return (
+              <BikerCard
+                key={user.id}
+                user={user}
+                tripCount={baseTripCount + ownLocalTrips.length}
+                photoCount={basePhotoCount + localPhotoCount}
+              />
+            );
           })}
         </div>
       ) : (

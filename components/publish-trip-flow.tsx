@@ -37,6 +37,9 @@ import {
   upsertPublishDraft
 } from "@/lib/publish-drafts";
 import { mapService } from "@/lib/services/map-service";
+import { optimizeImageFile } from "@/lib/supabase/image-upload";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { TripRoadLevel, TripType } from "@/lib/types";
 import { cn, slugify } from "@/lib/utils";
 import { useAuth } from "@/providers/auth-provider";
@@ -55,6 +58,7 @@ interface DraftPhoto {
   id: string;
   name: string;
   previewUrl: string;
+  uploadDataUrl?: string;
 }
 
 interface PublishDraft {
@@ -147,14 +151,6 @@ function normalizeDraft(stored: Partial<PublishDraft>): PublishDraft {
   };
 }
 
-function createPhotoPreview(file: File): DraftPhoto {
-  return {
-    id: crypto.randomUUID(),
-    name: file.name,
-    previewUrl: ""
-  };
-}
-
 async function fileToDataUrl(file: File) {
   return await new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
@@ -162,6 +158,22 @@ async function fileToDataUrl(file: File) {
     reader.onerror = () => reject(reader.error);
     reader.readAsDataURL(file);
   });
+}
+
+async function createDraftPhoto(file: File, kind: "cover" | "gallery"): Promise<DraftPhoto> {
+  const optimizedFile =
+    kind === "cover"
+      ? await optimizeImageFile(file, { maxWidth: 1600, maxHeight: 900, quality: 0.82 })
+      : await optimizeImageFile(file, { maxWidth: 1400, maxHeight: 1400, quality: 0.8 });
+
+  const previewUrl = await fileToDataUrl(optimizedFile);
+
+  return {
+    id: crypto.randomUUID(),
+    name: optimizedFile.name,
+    previewUrl,
+    uploadDataUrl: previewUrl
+  };
 }
 
 function draftRecordToComposerState(record: PublishDraftRecord) {
@@ -245,6 +257,7 @@ export function PublishTripFlow() {
 
     const draftIdFromQuery = searchParams.get("draft");
     const editIdFromQuery = searchParams.get("edit");
+    const editOnlineIdFromQuery = searchParams.get("edit-online");
 
     if (draftIdFromQuery) {
       const selectedDraft = findPublishDraft(draftIdFromQuery);
@@ -262,6 +275,75 @@ export function PublishTripFlow() {
           })
         );
       }
+      return;
+    }
+
+    if (editOnlineIdFromQuery && hasSupabaseEnv()) {
+      void (async () => {
+        try {
+          const supabase = getSupabaseBrowserClient();
+          const {
+            data: { session }
+          } = await supabase.auth.getSession();
+
+          if (!session?.access_token) {
+            throw new Error("Sua sessao expirou. Entre novamente antes de editar a viagem.");
+          }
+
+          const response = await fetch(`/api/trips/${editOnlineIdFromQuery}`, {
+            headers: {
+              Authorization: `Bearer ${session.access_token}`
+            }
+          });
+          const result = await response.json();
+
+          if (!response.ok) {
+            throw new Error(result.error ?? "Nao foi possivel carregar a viagem.");
+          }
+
+          setDraft(
+            normalizeDraft({
+              title: result.title,
+              summary: result.summary,
+              origin: result.origin,
+              destination: result.destination,
+              tripType: result.tripType,
+              roadLevel: result.roadLevel,
+              visibility: result.visibility,
+              tags: (result.tags ?? []).join(", "),
+              tips: (result.tips ?? []).join("\n"),
+              stops: (result.stops ?? []).map((stop: DraftStop) => ({
+                id: stop.id ?? crypto.randomUUID(),
+                label: stop.label,
+                type: stop.type,
+                notes: stop.notes
+              }))
+            })
+          );
+          setCoverPhoto(
+            result.coverPhotoUrl
+              ? {
+                  id: crypto.randomUUID(),
+                  name: "capa-publicada.jpg",
+                  previewUrl: result.coverPhotoUrl
+                }
+              : null
+          );
+          setGalleryPhotos(
+            (result.galleryPhotoUrls ?? []).map((photoUrl: string, index: number) => ({
+              id: crypto.randomUUID(),
+              name: `foto-${index + 1}.jpg`,
+              previewUrl: photoUrl
+            }))
+          );
+          setEditingTripId(result.id);
+          setActiveDraftId(null);
+          setSavedAt(null);
+          setFeedback(null);
+        } catch (error) {
+          setFeedback(error instanceof Error ? error.message : "Nao foi possivel carregar a viagem.");
+        }
+      })();
       return;
     }
 
@@ -334,9 +416,7 @@ export function PublishTripFlow() {
       return;
     }
 
-    const previewUrl = await fileToDataUrl(file);
-    const nextPhoto = createPhotoPreview(file);
-    nextPhoto.previewUrl = previewUrl;
+    const nextPhoto = await createDraftPhoto(file, "cover");
     setCoverPhoto(nextPhoto);
 
     setFeedback("Foto de capa pronta. Se quiser, voce pode trocar por outra antes de publicar.");
@@ -350,14 +430,7 @@ export function PublishTripFlow() {
     }
 
     const remainingSlots = Math.max(0, 6 - galleryPhotos.length);
-    const nextPhotos = await Promise.all(
-      files.slice(0, remainingSlots).map(async (file) => {
-        const previewUrl = await fileToDataUrl(file);
-        const photo = createPhotoPreview(file);
-        photo.previewUrl = previewUrl;
-        return photo;
-      })
-    );
+    const nextPhotos = await Promise.all(files.slice(0, remainingSlots).map((file) => createDraftPhoto(file, "gallery")));
 
     setGalleryPhotos((current) => [...current, ...nextPhotos]);
 
@@ -436,8 +509,10 @@ export function PublishTripFlow() {
       summary: draft.summary.trim(),
       origin: draft.origin.trim(),
       destination: draft.destination.trim(),
-      coverPhoto,
-      galleryPhotos,
+      coverPhoto: hasSupabaseEnv() ? coverPhoto && { ...coverPhoto, uploadDataUrl: undefined } : coverPhoto,
+      galleryPhotos: hasSupabaseEnv()
+        ? galleryPhotos.map((photo) => ({ ...photo, uploadDataUrl: undefined }))
+        : galleryPhotos,
       updatedAt: new Date().toISOString()
     };
 
@@ -456,57 +531,135 @@ export function PublishTripFlow() {
       return;
     }
 
-    setPublishing(true);
+    void (async () => {
+      setPublishing(true);
+      try {
+        if (hasSupabaseEnv()) {
+          if (!user) {
+            throw new Error("Entre na sua conta antes de publicar uma viagem.");
+          }
 
-    const slug = slugify(draft.title);
-    const nextRecord: PublishedTripRecord = {
-      id: editingTripId ?? crypto.randomUUID(),
-      slug,
-      title: draft.title.trim(),
-      summary: draft.summary.trim(),
-      origin: draft.origin.trim(),
-      destination: draft.destination.trim(),
-      tripType: draft.tripType,
-      roadLevel: draft.roadLevel,
-      visibility: draft.visibility,
-      tags: parseMultiline(draft.tags),
-      tips: parseMultiline(draft.tips),
-      stops: draft.stops
-        .filter((stop) => stop.label.trim())
-        .map((stop) => ({ label: stop.label.trim(), type: stop.type, notes: stop.notes.trim() })),
-      coverPhotoName: coverPhoto?.name ?? null,
-      galleryPhotoNames: galleryPhotos.map((photo) => photo.name),
-      coverPhotoUrl: coverPhoto?.previewUrl ?? null,
-      galleryPhotoUrls: galleryPhotos.map((photo) => photo.previewUrl),
-      author: {
-        id: user?.id ?? "local-user",
-        username: user?.username ?? "usuario-local",
-        name: user?.name ?? "Usuario local",
-        avatarUrl:
-          user?.avatarUrl ??
-          "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80",
-        motorcycle: user?.motorcycle ?? "Moto nao informada"
-      },
-      publishedAt: new Date().toISOString()
-    };
-    if (editingTripId) {
-      updatePublishedTripRecord(editingTripId, () => nextRecord);
-    } else {
-      savePublishedTripRecord(nextRecord);
-    }
+          const supabase = getSupabaseBrowserClient();
+          const {
+            data: { session }
+          } = await supabase.auth.getSession();
 
-    if (activeDraftId) {
-      deletePublishDraft(activeDraftId);
-      setActiveDraftId(null);
-    }
+          if (!session?.access_token) {
+            throw new Error("Sua sessao expirou. Entre novamente antes de publicar.");
+          }
 
-    setPublishedSummary(
-      `Viagem publicada localmente em /perfil/${nextRecord.author.username}/viagem/${slug}. O proximo passo e enviar isso para o feed real via Supabase.`
-    );
-    setFeedback("Publicacao concluida no MVP local. Agora ja existe um fechamento real para o fluxo.");
-    setPublishing(false);
-    setEditingTripId(nextRecord.id);
-    router.replace(`/publicar?edit=${nextRecord.id}`);
+          const payload = {
+            tripId: editingTripId,
+            username: user.username,
+            title: draft.title.trim(),
+            summary: draft.summary.trim(),
+            origin: draft.origin.trim(),
+            destination: draft.destination.trim(),
+            tripType: draft.tripType,
+            roadLevel: draft.roadLevel,
+            visibility: draft.visibility,
+            tags: parseMultiline(draft.tags),
+            tips: parseMultiline(draft.tips),
+            stops: draft.stops
+              .filter((stop) => stop.label.trim())
+              .map((stop) => ({ label: stop.label.trim(), type: stop.type, notes: stop.notes.trim() })),
+            coverPhoto: coverPhoto
+              ? {
+                  name: coverPhoto.name,
+                  url: coverPhoto.previewUrl,
+                  dataUrl: coverPhoto.uploadDataUrl ?? coverPhoto.previewUrl
+                }
+              : null,
+            galleryPhotos: galleryPhotos.map((photo) => ({
+              name: photo.name,
+              url: photo.previewUrl,
+              dataUrl: photo.uploadDataUrl ?? photo.previewUrl
+            }))
+          };
+
+          const response = await fetch(editingTripId ? `/api/trips/${editingTripId}` : "/api/trips", {
+            method: editingTripId ? "PATCH" : "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.access_token}`
+            },
+            body: JSON.stringify(payload)
+          });
+
+          const result = await response.json();
+          if (!response.ok) {
+            throw new Error(result.error ?? "Nao foi possivel publicar a viagem.");
+          }
+
+          if (activeDraftId) {
+            deletePublishDraft(activeDraftId);
+            setActiveDraftId(null);
+          }
+
+          setPublishedSummary(
+            `Viagem publicada em /perfil/${user.username}/viagem/${result.slug} e sincronizada com o banco online.`
+          );
+          setFeedback("Viagem publicada com sucesso no ambiente online.");
+          setEditingTripId(result.id);
+          router.push(`/perfil/${user.username}/viagem/${result.slug}`);
+          router.refresh();
+          return;
+        }
+
+        const slug = slugify(draft.title);
+        const nextRecord: PublishedTripRecord = {
+          id: editingTripId ?? crypto.randomUUID(),
+          slug,
+          title: draft.title.trim(),
+          summary: draft.summary.trim(),
+          origin: draft.origin.trim(),
+          destination: draft.destination.trim(),
+          tripType: draft.tripType,
+          roadLevel: draft.roadLevel,
+          visibility: draft.visibility,
+          tags: parseMultiline(draft.tags),
+          tips: parseMultiline(draft.tips),
+          stops: draft.stops
+            .filter((stop) => stop.label.trim())
+            .map((stop) => ({ label: stop.label.trim(), type: stop.type, notes: stop.notes.trim() })),
+          coverPhotoName: coverPhoto?.name ?? null,
+          galleryPhotoNames: galleryPhotos.map((photo) => photo.name),
+          coverPhotoUrl: coverPhoto?.previewUrl ?? null,
+          galleryPhotoUrls: galleryPhotos.map((photo) => photo.previewUrl),
+          author: {
+            id: user?.id ?? "local-user",
+            username: user?.username ?? "usuario-local",
+            name: user?.name ?? "Usuario local",
+            avatarUrl:
+              user?.avatarUrl ??
+              "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80",
+            motorcycle: user?.motorcycle ?? "Moto nao informada"
+          },
+          publishedAt: new Date().toISOString()
+        };
+        if (editingTripId) {
+          updatePublishedTripRecord(editingTripId, () => nextRecord);
+        } else {
+          savePublishedTripRecord(nextRecord);
+        }
+
+        if (activeDraftId) {
+          deletePublishDraft(activeDraftId);
+          setActiveDraftId(null);
+        }
+
+        setPublishedSummary(
+          `Viagem publicada localmente em /perfil/${nextRecord.author.username}/viagem/${slug}. O proximo passo e enviar isso para o feed real via Supabase.`
+        );
+        setFeedback("Publicacao concluida no MVP local. Agora ja existe um fechamento real para o fluxo.");
+        setEditingTripId(nextRecord.id);
+        router.replace(`/publicar?edit=${nextRecord.id}`);
+      } catch (error) {
+        setFeedback(error instanceof Error ? error.message : "Nao foi possivel publicar a viagem.");
+      } finally {
+        setPublishing(false);
+      }
+    })();
   }
 
   function openDraft(draftId: string) {
