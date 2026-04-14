@@ -74,21 +74,27 @@ export async function optimizeImageFile(
 }
 
 export async function uploadProfileImage({
-  userId,
   file,
   type
 }: {
-  userId: string;
   file: File;
   type: "avatar" | "cover";
 }) {
   const supabase = getSupabaseBrowserClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  if (!user?.id) {
+    throw new Error("Sua sessao expirou. Entre novamente antes de enviar imagens.");
+  }
+
   const optimizedFile =
     type === "avatar"
       ? await optimizeImageFile(file, { maxWidth: 512, maxHeight: 512, quality: 0.82 })
       : await optimizeImageFile(file, { maxWidth: 1600, maxHeight: 900, quality: 0.84 });
 
-  const filePath = `${type}s/${userId}/${Date.now()}.jpg`;
+  const filePath = `${type}s/${user.id}/${Date.now()}.jpg`;
   const { error } = await supabase.storage.from(PROFILE_MEDIA_BUCKET).upload(filePath, optimizedFile, {
     cacheControl: "3600",
     upsert: true,
@@ -99,6 +105,8 @@ export async function uploadProfileImage({
     throw new Error(
       error.message.includes("Bucket not found")
         ? "O bucket profile-media ainda nao existe no Supabase Storage."
+        : error.message.includes("row-level security")
+          ? "Sua sessao nao tem permissao para enviar esta imagem. Saia e entre novamente para atualizar a autenticacao."
         : error.message
     );
   }

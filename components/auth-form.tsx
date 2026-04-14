@@ -13,8 +13,8 @@ interface AuthFormProps {
 export function AuthForm({ mode }: AuthFormProps) {
   const router = useRouter();
   const { login, signup, requestPasswordReset } = useAuth();
-  const [email, setEmail] = useState("junior@rota6.dev");
-  const [password, setPassword] = useState("123456");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);

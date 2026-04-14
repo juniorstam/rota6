@@ -150,7 +150,6 @@ export function ProfileEditorForm() {
       if (avatarFile) {
         setMessage("Otimizando e enviando sua foto de perfil...");
         nextAvatarUrl = await uploadProfileImage({
-          userId: user.id,
           file: avatarFile,
           type: "avatar"
         });
@@ -159,7 +158,6 @@ export function ProfileEditorForm() {
       if (coverFile) {
         setMessage("Otimizando e enviando sua imagem de capa...");
         nextCoverUrl = await uploadProfileImage({
-          userId: user.id,
           file: coverFile,
           type: "cover"
         });

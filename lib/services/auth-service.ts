@@ -198,10 +198,18 @@ export const authService = {
     }
 
     const supabase = getSupabaseBrowserClient();
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
+
+    if (!user?.id) {
+      throw new Error("Sua sessao expirou. Entre novamente para salvar o perfil.");
+    }
+
     const sanitizedAvatarUrl = stripLargeInlineImage(profile.avatarUrl) ?? profile.avatarUrl;
     const sanitizedCoverUrl = stripLargeInlineImage(profile.coverUrl);
     const profileUpdates = {
-      email: profile.email,
+      email: user.email ?? profile.email,
       username: profile.username,
       name: profile.name,
       avatar_url: sanitizedAvatarUrl,
@@ -222,7 +230,7 @@ export const authService = {
     const updatePromise = supabase
       .from("profiles")
       .update(profileUpdates)
-      .eq("id", profile.id)
+      .eq("id", user.id)
       .select("*")
       .single();
 
@@ -243,8 +251,6 @@ export const authService = {
     }
 
     const nextProfile = mapProfileRowToUserProfile(data);
-    nextProfile.avatarUrl = profile.avatarUrl;
-    nextProfile.coverUrl = profile.coverUrl;
 
     return syncSessionProfile(nextProfile);
   },
