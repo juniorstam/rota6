@@ -60,3 +60,8 @@ export async function getTripByAuthorAndSlugFromDb(
   const trips = await listPublicTripsFromDb();
   return trips.find((trip) => trip.author.username === username && trip.slug === slug) ?? null;
 }
+
+export async function getTripBySlugFromDb(slug: string): Promise<PublishedTrip | null> {
+  const trips = await listPublicTripsFromDb();
+  return trips.find((trip) => trip.slug === slug) ?? null;
+}

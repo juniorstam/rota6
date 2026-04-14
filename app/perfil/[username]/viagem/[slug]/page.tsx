@@ -1,4 +1,5 @@
 import { TripDetailsClient } from "@/components/trip-details-client";
+import { getTripPageData } from "@/lib/server/site-data";
 
 export default async function ProfileTripDetailsPage({
   params
@@ -6,5 +7,6 @@ export default async function ProfileTripDetailsPage({
   params: Promise<{ username: string; slug: string }>;
 }) {
   const { username, slug } = await params;
-  return <TripDetailsClient username={username} slug={slug} />;
+  const data = await getTripPageData(slug, username);
+  return <TripDetailsClient username={username} slug={slug} initialTrip={data.trip} useSupabase={data.useSupabase} />;
 }

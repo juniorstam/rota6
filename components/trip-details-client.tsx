@@ -22,18 +22,27 @@ import { useAuth } from "@/providers/auth-provider";
 
 export function TripDetailsClient({
   username,
-  slug
+  slug,
+  initialTrip,
+  useSupabase
 }: {
   username?: string;
   slug: string;
+  initialTrip: PublishedTrip | null;
+  useSupabase: boolean;
 }) {
   const router = useRouter();
   const { user } = useAuth();
-  const [localTrips, setLocalTrips] = useState<PublishedTrip[]>([]);
+  const [localTrips, setLocalTrips] = useState<PublishedTrip[]>(() => (useSupabase ? [] : []));
   const [hydrated, setHydrated] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
 
   useEffect(() => {
+    if (useSupabase) {
+      setHydrated(true);
+      return;
+    }
+
     const sync = () => {
       setLocalTrips(readPublishedTrips());
       setHydrated(true);
@@ -47,9 +56,13 @@ export function TripDetailsClient({
       window.removeEventListener(PUBLISHED_TRIPS_EVENT, sync);
       window.removeEventListener("storage", sync);
     };
-  }, []);
+  }, [useSupabase]);
 
   const trip = useMemo(() => {
+    if (useSupabase) {
+      return initialTrip;
+    }
+
     if (username) {
       return (
         localTrips.find((entry) => entry.author.username === username && entry.slug === slug) ??
@@ -59,10 +72,10 @@ export function TripDetailsClient({
     }
 
     return trips.find((entry) => entry.slug === slug) ?? null;
-  }, [localTrips, slug, username]);
+  }, [initialTrip, localTrips, slug, useSupabase, username]);
   const localTripRecord = useMemo(
-    () => (username ? findPublishedTripRecord(username, slug) : null),
-    [hydrated, slug, username, localTrips]
+    () => (useSupabase ? null : username ? findPublishedTripRecord(username, slug) : null),
+    [hydrated, slug, username, localTrips, useSupabase]
   );
   const isOwnLocalTrip = Boolean(localTripRecord && user && localTripRecord.author.id === user.id);
 

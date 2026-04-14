@@ -1,4 +1,5 @@
 import { BikersDirectoryClient } from "@/components/bikers-directory-client";
+import { getBikersPageData } from "@/lib/server/site-data";
 
 export default async function BikersPage({
   searchParams
@@ -6,5 +7,14 @@ export default async function BikersPage({
   searchParams: Promise<{ q?: string }>;
 }) {
   const params = await searchParams;
-  return <BikersDirectoryClient initialQuery={params.q ?? ""} />;
+  const data = await getBikersPageData();
+
+  return (
+    <BikersDirectoryClient
+      initialQuery={params.q ?? ""}
+      initialProfiles={data.profiles}
+      initialTrips={data.trips}
+      useSupabase={data.useSupabase}
+    />
+  );
 }

@@ -7,13 +7,29 @@ import { SearchBar } from "@/components/search-bar";
 import { LOCAL_PROFILES_EVENT, getMergedProfiles } from "@/lib/local-profiles";
 import { trips } from "@/lib/mock-data";
 import { PUBLISHED_TRIPS_EVENT, readPublishedTrips } from "@/lib/published-trips";
-import { UserProfile } from "@/lib/types";
+import { PublishedTrip, UserProfile } from "@/lib/types";
 
-export function BikersDirectoryClient({ initialQuery }: { initialQuery: string }) {
-  const [profiles, setProfiles] = useState<UserProfile[]>(() => getMergedProfiles());
-  const [localTrips, setLocalTrips] = useState(() => readPublishedTrips());
+export function BikersDirectoryClient({
+  initialQuery,
+  initialProfiles,
+  initialTrips,
+  useSupabase
+}: {
+  initialQuery: string;
+  initialProfiles: UserProfile[];
+  initialTrips: PublishedTrip[];
+  useSupabase: boolean;
+}) {
+  const [profiles, setProfiles] = useState<UserProfile[]>(() => (useSupabase ? initialProfiles : getMergedProfiles()));
+  const [localTrips, setLocalTrips] = useState<PublishedTrip[]>(() => (useSupabase ? initialTrips : readPublishedTrips()));
 
   useEffect(() => {
+    if (useSupabase) {
+      setProfiles(initialProfiles);
+      setLocalTrips(initialTrips);
+      return;
+    }
+
     const syncProfiles = () => setProfiles(getMergedProfiles());
     const syncTrips = () => setLocalTrips(readPublishedTrips());
 
@@ -31,7 +47,7 @@ export function BikersDirectoryClient({ initialQuery }: { initialQuery: string }
       window.removeEventListener("storage", syncProfiles);
       window.removeEventListener("storage", syncTrips);
     };
-  }, []);
+  }, [initialProfiles, initialTrips, useSupabase]);
 
   const filteredUsers = useMemo(() => {
     const query = initialQuery.trim().toLowerCase();
@@ -68,12 +84,15 @@ export function BikersDirectoryClient({ initialQuery }: { initialQuery: string }
 
       <div className="grid gap-5 lg:grid-cols-2">
         {filteredUsers.map((user) => {
-          const mockTripCount = trips.filter((trip) => trip.author.id === user.id).length;
-          const mockPhotoCount = trips
+          const baseTrips = useSupabase ? initialTrips : trips;
+          const mockTripCount = baseTrips.filter((trip) => trip.author.id === user.id).length;
+          const mockPhotoCount = baseTrips
             .filter((trip) => trip.author.id === user.id)
             .reduce((count, trip) => count + trip.photos.length, 0);
 
-          const ownLocalTrips = localTrips.filter((trip) => trip.author.id === user.id && trip.publicVisibility);
+          const ownLocalTrips = useSupabase
+            ? []
+            : localTrips.filter((trip) => trip.author.id === user.id && trip.publicVisibility);
           const localPhotoCount = ownLocalTrips.reduce((count, trip) => count + trip.photos.length, 0);
 
           return (

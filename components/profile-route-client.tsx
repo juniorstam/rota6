@@ -19,23 +19,43 @@ type ProfileSection = "overview" | "photos" | "followers" | "following";
 
 export function ProfileRouteClient({
   username,
-  section
+  section,
+  initialProfile,
+  initialProfiles,
+  initialTrips,
+  initialPhotos,
+  useSupabase
 }: {
   username: string;
   section: ProfileSection;
+  initialProfile: UserProfile | null;
+  initialProfiles: UserProfile[];
+  initialTrips: PublishedTrip[];
+  initialPhotos: string[];
+  useSupabase: boolean;
 }) {
   const { user } = useAuth();
   const { followingMap } = useFollowing();
   const [profile, setProfile] = useState<UserProfile | null>(() => {
+    if (useSupabase) {
+      return initialProfile;
+    }
+
     if (user && normalizeUsername(user.username) === normalizeUsername(username)) {
       return user;
     }
 
     return findProfileByUsername(username) ?? getProfileByUsername(username);
   });
-  const [localTrips, setLocalTrips] = useState(() => readPublishedTrips());
+  const [localTrips, setLocalTrips] = useState<PublishedTrip[]>(() => (useSupabase ? initialTrips : readPublishedTrips()));
 
   useEffect(() => {
+    if (useSupabase) {
+      setProfile(initialProfile);
+      setLocalTrips(initialTrips);
+      return;
+    }
+
     const sync = () => {
       const nextProfile =
         user && normalizeUsername(user.username) === normalizeUsername(username)
@@ -56,10 +76,16 @@ export function ProfileRouteClient({
       window.removeEventListener(PUBLISHED_TRIPS_EVENT, sync);
       window.removeEventListener("storage", sync);
     };
-  }, [user?.id, username]);
+  }, [initialProfile, initialTrips, useSupabase, user?.id, username]);
 
-  const profileTrips = useMemo(() => (profile ? getProfileTrips(profile.id) : []), [profile]);
-  const profilePhotos = useMemo(() => (profile ? getProfilePhotos(profile.id) : []), [profile]);
+  const profileTrips = useMemo(
+    () => (useSupabase ? initialTrips : profile ? getProfileTrips(profile.id) : []),
+    [initialTrips, profile, useSupabase]
+  );
+  const profilePhotos = useMemo(
+    () => (useSupabase ? initialPhotos : profile ? getProfilePhotos(profile.id) : []),
+    [initialPhotos, profile, useSupabase]
+  );
   const visibleLocalTrips = useMemo(() => {
     if (!profile) {
       return [] as PublishedTrip[];
@@ -108,7 +134,14 @@ export function ProfileRouteClient({
   }
 
   if (section === "overview") {
-    return <ProfilePageClient profile={profile} profileTrips={profileTrips} profilePhotos={profilePhotos} />;
+    return (
+      <ProfilePageClient
+        profile={profile}
+        profileTrips={profileTrips}
+        profilePhotos={profilePhotos}
+        useSupabase={useSupabase}
+      />
+    );
   }
 
   if (section === "photos") {
@@ -153,7 +186,12 @@ export function ProfileRouteClient({
         followersCount={followersCount}
         followingCount={followingCount}
       />
-      <ProfileConnectionsClient profile={profile} mode={section === "followers" ? "followers" : "following"} />
+      <ProfileConnectionsClient
+        profile={profile}
+        mode={section === "followers" ? "followers" : "following"}
+        initialProfiles={useSupabase ? initialProfiles : []}
+        useSupabase={useSupabase}
+      />
     </div>
   );
 }

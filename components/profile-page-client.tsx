@@ -15,20 +15,27 @@ import { useFollowing } from "@/providers/following-provider";
 export function ProfilePageClient({
   profile,
   profileTrips,
-  profilePhotos
+  profilePhotos,
+  useSupabase
 }: {
   profile: UserProfile;
   profileTrips: PublishedTrip[];
   profilePhotos: string[];
+  useSupabase: boolean;
 }) {
   const { user } = useAuth();
   const { currentUserId, followingMap } = useFollowing();
-  const [localTrips, setLocalTrips] = useState<PublishedTrip[]>([]);
+  const [localTrips, setLocalTrips] = useState<PublishedTrip[]>(() => (useSupabase ? [] : []));
   const isOwnProfile = profile.id === currentUserId;
   const followersCount = Object.values(followingMap).filter((ids) => ids.includes(profile.id)).length;
   const followingCount = (followingMap[profile.id] ?? []).length;
 
   useEffect(() => {
+    if (useSupabase) {
+      setLocalTrips([]);
+      return;
+    }
+
     const sync = () => setLocalTrips(readPublishedTrips());
     sync();
 
@@ -39,29 +46,29 @@ export function ProfilePageClient({
       window.removeEventListener(PUBLISHED_TRIPS_EVENT, sync);
       window.removeEventListener("storage", sync);
     };
-  }, []);
+  }, [useSupabase]);
 
   const mergedTrips = useMemo(
     () => {
-      const ownLocalTrips = localTrips.filter((trip) => trip.author.id === profile.id);
+      const ownLocalTrips = useSupabase ? [] : localTrips.filter((trip) => trip.author.id === profile.id);
       const visibleLocalTrips = isOwnProfile
         ? ownLocalTrips
         : ownLocalTrips.filter((trip) => trip.publicVisibility);
 
       return [...visibleLocalTrips, ...profileTrips];
     },
-    [isOwnProfile, localTrips, profile.id, profileTrips]
+    [isOwnProfile, localTrips, profile.id, profileTrips, useSupabase]
   );
   const mergedPhotosCount = useMemo(
     () => {
-      const ownLocalTrips = localTrips.filter((trip) => trip.author.id === profile.id);
+      const ownLocalTrips = useSupabase ? [] : localTrips.filter((trip) => trip.author.id === profile.id);
       const visibleLocalTrips = isOwnProfile
         ? ownLocalTrips
         : ownLocalTrips.filter((trip) => trip.publicVisibility);
 
       return profilePhotos.length + visibleLocalTrips.reduce((count, trip) => count + trip.photos.length, 0);
     },
-    [isOwnProfile, localTrips, profile.id, profilePhotos.length]
+    [isOwnProfile, localTrips, profile.id, profilePhotos.length, useSupabase]
   );
 
   return (

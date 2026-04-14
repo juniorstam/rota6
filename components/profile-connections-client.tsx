@@ -10,15 +10,24 @@ import { useFollowing } from "@/providers/following-provider";
 
 export function ProfileConnectionsClient({
   profile,
-  mode
+  mode,
+  initialProfiles,
+  useSupabase
 }: {
   profile: UserProfile;
   mode: "followers" | "following";
+  initialProfiles: UserProfile[];
+  useSupabase: boolean;
 }) {
   const { followingMap } = useFollowing();
-  const [profiles, setProfiles] = useState<UserProfile[]>(() => getMergedProfiles());
+  const [profiles, setProfiles] = useState<UserProfile[]>(() => (useSupabase ? initialProfiles : getMergedProfiles()));
 
   useEffect(() => {
+    if (useSupabase) {
+      setProfiles(initialProfiles);
+      return;
+    }
+
     const sync = () => setProfiles(getMergedProfiles());
     window.addEventListener(LOCAL_PROFILES_EVENT, sync);
     window.addEventListener("storage", sync);
@@ -27,7 +36,7 @@ export function ProfileConnectionsClient({
       window.removeEventListener(LOCAL_PROFILES_EVENT, sync);
       window.removeEventListener("storage", sync);
     };
-  }, []);
+  }, [initialProfiles, useSupabase]);
 
   const list =
     mode === "followers"

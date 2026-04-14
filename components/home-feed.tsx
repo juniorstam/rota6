@@ -10,12 +10,23 @@ import { PublishedTrip } from "@/lib/types";
 import { useAuth } from "@/providers/auth-provider";
 import { useFollowing } from "@/providers/following-provider";
 
-export function HomeFeed() {
+export function HomeFeed({
+  initialTrips,
+  useSupabase
+}: {
+  initialTrips: PublishedTrip[];
+  useSupabase: boolean;
+}) {
   const { user, loading } = useAuth();
   const { currentUserId, followingIds } = useFollowing();
-  const [localTrips, setLocalTrips] = useState<PublishedTrip[]>([]);
+  const [localTrips, setLocalTrips] = useState<PublishedTrip[]>(() => (useSupabase ? initialTrips : []));
 
   useEffect(() => {
+    if (useSupabase) {
+      setLocalTrips(initialTrips);
+      return;
+    }
+
     const sync = () => setLocalTrips(readPublishedTrips());
     sync();
 
@@ -26,16 +37,16 @@ export function HomeFeed() {
       window.removeEventListener(PUBLISHED_TRIPS_EVENT, sync);
       window.removeEventListener("storage", sync);
     };
-  }, []);
+  }, [initialTrips, useSupabase]);
 
   const visibleAuthorIds =
     currentUserId && user ? Array.from(new Set([currentUserId, ...followingIds])) : followingIds;
   const followedTrips = useMemo(
     () =>
-      [...localTrips, ...trips].filter(
+      (useSupabase ? initialTrips : [...localTrips, ...trips]).filter(
         (trip) => visibleAuthorIds.includes(trip.author.id) && trip.publicVisibility
       ),
-    [localTrips, visibleAuthorIds]
+    [initialTrips, localTrips, useSupabase, visibleAuthorIds]
   );
 
   if (loading) {

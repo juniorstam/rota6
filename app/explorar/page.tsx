@@ -1,4 +1,5 @@
 import { ExploreFeedClient } from "@/components/explore-feed-client";
+import { getExplorePageData } from "@/lib/server/site-data";
 
 export default async function ExplorePage({
   searchParams
@@ -6,5 +7,13 @@ export default async function ExplorePage({
   searchParams: Promise<{ q?: string }>;
 }) {
   const params = await searchParams;
-  return <ExploreFeedClient initialQuery={params.q ?? ""} />;
+  const data = await getExplorePageData();
+
+  return (
+    <ExploreFeedClient
+      initialQuery={params.q ?? ""}
+      initialTrips={data.trips}
+      useSupabase={data.useSupabase}
+    />
+  );
 }

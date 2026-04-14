@@ -2,6 +2,17 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { mapProfileRowToUserProfile } from "@/lib/supabase/mappers";
 import { UserProfile } from "@/lib/types";
 
+export async function listProfilesFromDb(): Promise<UserProfile[]> {
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase.from("profiles").select("*").order("name", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []).map(mapProfileRowToUserProfile);
+}
+
 export async function getProfileByUsernameFromDb(username: string): Promise<UserProfile | null> {
   const supabase = createSupabaseServerClient();
   const { data, error } = await supabase

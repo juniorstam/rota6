@@ -1,5 +1,6 @@
 import { users } from "@/lib/mock-data";
 import { safeSetLocalStorageItem } from "@/lib/storage-utils";
+import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { UserProfile } from "@/lib/types";
 
 export const SESSION_STORAGE_KEY = "rota6-session";
@@ -167,6 +168,10 @@ export function createBlankProfile({
 export function getMergedProfiles() {
   if (typeof window === "undefined") {
     return users;
+  }
+
+  if (hasSupabaseEnv()) {
+    return readLocalUsers();
   }
 
   const map = new Map<string, UserProfile>();

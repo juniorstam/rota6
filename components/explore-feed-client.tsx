@@ -8,10 +8,23 @@ import { trips } from "@/lib/mock-data";
 import { PUBLISHED_TRIPS_EVENT, readPublishedTrips } from "@/lib/published-trips";
 import { PublishedTrip } from "@/lib/types";
 
-export function ExploreFeedClient({ initialQuery }: { initialQuery: string }) {
-  const [localTrips, setLocalTrips] = useState<PublishedTrip[]>([]);
+export function ExploreFeedClient({
+  initialQuery,
+  initialTrips,
+  useSupabase
+}: {
+  initialQuery: string;
+  initialTrips: PublishedTrip[];
+  useSupabase: boolean;
+}) {
+  const [localTrips, setLocalTrips] = useState<PublishedTrip[]>(() => (useSupabase ? initialTrips : []));
 
   useEffect(() => {
+    if (useSupabase) {
+      setLocalTrips(initialTrips);
+      return;
+    }
+
     const sync = () => setLocalTrips(readPublishedTrips());
     sync();
 
@@ -22,11 +35,13 @@ export function ExploreFeedClient({ initialQuery }: { initialQuery: string }) {
       window.removeEventListener(PUBLISHED_TRIPS_EVENT, sync);
       window.removeEventListener("storage", sync);
     };
-  }, []);
+  }, [initialTrips, useSupabase]);
 
   const filteredTrips = useMemo(() => {
     const query = initialQuery.trim().toLowerCase();
-    const mergedTrips = [...localTrips.filter((trip) => trip.publicVisibility), ...trips];
+    const mergedTrips = useSupabase
+      ? initialTrips
+      : [...localTrips.filter((trip) => trip.publicVisibility), ...trips];
 
     if (!query) {
       return mergedTrips;
@@ -37,7 +52,7 @@ export function ExploreFeedClient({ initialQuery }: { initialQuery: string }) {
         entry.toLowerCase().includes(query)
       )
     );
-  }, [initialQuery, localTrips]);
+  }, [initialQuery, initialTrips, localTrips, useSupabase]);
 
   return (
     <div className="space-y-8">
