@@ -17,6 +17,7 @@ import {
   updatePublishedTripRecord
 } from "@/lib/published-trips";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { DEFAULT_TRIP_COVER_URL, sanitizeTripCoverUrl } from "@/lib/trip-images";
 import { PublishedTrip } from "@/lib/types";
 import { formatDistance, formatDuration } from "@/lib/utils";
 import { useAuth } from "@/providers/auth-provider";
@@ -37,6 +38,7 @@ export function TripDetailsClient({
   const [localTrips, setLocalTrips] = useState<PublishedTrip[]>(() => (useSupabase ? [] : []));
   const [hydrated, setHydrated] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [coverSrc, setCoverSrc] = useState(sanitizeTripCoverUrl(initialTrip?.coverUrl));
 
   useEffect(() => {
     if (useSupabase) {
@@ -80,6 +82,10 @@ export function TripDetailsClient({
   );
   const isOwnLocalTrip = Boolean(localTripRecord && user && localTripRecord.author.id === user.id);
   const isOwnSupabaseTrip = Boolean(useSupabase && user && trip && (trip.author.id === user.id || user.isAdmin));
+
+  useEffect(() => {
+    setCoverSrc(sanitizeTripCoverUrl(trip?.coverUrl));
+  }, [trip?.coverUrl]);
 
   function handleTogglePublished() {
     if (useSupabase && trip) {
@@ -209,7 +215,14 @@ export function TripDetailsClient({
     <div className="space-y-8">
       <section className="overflow-hidden rounded-[36px] border border-border bg-surface shadow-glow">
         <div className="relative h-[320px] md:h-[420px]">
-          <Image src={trip.coverUrl} alt={trip.title} fill sizes="100vw" className="object-cover" />
+          <Image
+            src={coverSrc}
+            alt={trip.title}
+            fill
+            sizes="100vw"
+            className="object-cover"
+            onError={() => setCoverSrc(DEFAULT_TRIP_COVER_URL)}
+          />
         </div>
 
         <div className="space-y-5 p-6 md:p-8">

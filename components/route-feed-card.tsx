@@ -1,14 +1,19 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 import { Clock3, MapPinned } from "lucide-react";
 
 import { FavoriteButton } from "@/components/favorite-button";
+import { DEFAULT_TRIP_COVER_URL, sanitizeTripCoverUrl } from "@/lib/trip-images";
 import { roadLevelLabels, tripTypeLabels } from "@/lib/trip-taxonomy";
 import { PublishedTrip } from "@/lib/types";
 import { formatDistance, formatDuration } from "@/lib/utils";
 
 export function RouteFeedCard({ trip }: { trip: PublishedTrip }) {
   const tripHref = `/perfil/${trip.author.username}/viagem/${trip.slug}`;
+  const [coverSrc, setCoverSrc] = useState(sanitizeTripCoverUrl(trip.coverUrl));
 
   return (
     <article className="overflow-hidden rounded-[28px] border border-border bg-surface shadow-glow">
@@ -28,11 +33,12 @@ export function RouteFeedCard({ trip }: { trip: PublishedTrip }) {
       <Link href={tripHref} className="block">
         <div className="relative aspect-square w-full sm:h-[360px] sm:aspect-auto">
           <Image
-            src={trip.coverUrl}
+            src={coverSrc}
             alt={trip.title}
             fill
             sizes="(max-width: 640px) 100vw, 50vw"
             className="object-cover"
+            onError={() => setCoverSrc(DEFAULT_TRIP_COVER_URL)}
           />
         </div>
       </Link>

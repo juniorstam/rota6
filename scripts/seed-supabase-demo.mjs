@@ -176,7 +176,7 @@ const trips = [
     destination: "Santana de Parnaíba, SP",
     summary: "Trecho curto, histórico e perfeito para aquecer a semana sem perder a estrada.",
     coverUrl:
-      "https://images.unsplash.com/photo-1500534314209-a26db0f5b4aa?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1400&q=80",
     photos: ["https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?auto=format&fit=crop&w=1200&q=80"],
     tags: ["urbano", "solo", "bate-volta"],
     tips: ["Ótima rota para rodar cedo.", "Vale combinar com café na volta."],

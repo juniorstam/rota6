@@ -1,6 +1,7 @@
 "use client";
 
 import { PublishedTrip, TripRoadLevel, TripType, UserProfile } from "@/lib/types";
+import { sanitizeTripCoverUrl } from "@/lib/trip-images";
 import { safeSetLocalStorageItem } from "@/lib/storage-utils";
 
 export const PUBLISHED_TRIPS_STORAGE_KEY = "rota6.published-trips.v1";
@@ -149,7 +150,7 @@ export function recordToPublishedTrip(record: PublishedTripRecord): PublishedTri
     origin: record.origin,
     destination: record.destination,
     summary: record.summary,
-    coverUrl: record.coverPhotoUrl || galleryPhotos[0] || FALLBACK_COVER_URL,
+    coverUrl: sanitizeTripCoverUrl(record.coverPhotoUrl || galleryPhotos[0] || FALLBACK_COVER_URL),
     photos: galleryPhotos,
     tags: record.tags,
     routeStops: record.stops.map((stop, index) => ({
