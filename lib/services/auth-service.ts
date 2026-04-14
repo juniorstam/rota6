@@ -56,8 +56,11 @@ function stripLargeInlineImage(value?: string) {
 
 export const authService = {
   async login({ email, password }: AuthPayload) {
+    clearSession();
+
     if (hasSupabaseEnv()) {
       const supabase = getSupabaseBrowserClient();
+      await supabase.auth.signOut();
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password: password ?? ""
@@ -81,7 +84,16 @@ export const authService = {
     }
 
     const localUsers = readLocalUsers();
-    const existingUser = [...localUsers, ...users].find((user) => user.email === email) ?? users[0];
+    const existingUser = [...localUsers, ...users].find((user) => user.email === email);
+
+    if (!existingUser) {
+      throw new Error("Credenciais inválidas. Verifique o e-mail e a senha.");
+    }
+
+    if (!password || password !== "123456") {
+      throw new Error("Credenciais inválidas. Verifique o e-mail e a senha.");
+    }
+
     saveSession(existingUser);
     return existingUser;
   },
