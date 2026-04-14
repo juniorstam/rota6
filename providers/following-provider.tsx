@@ -3,7 +3,8 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 import { readFollowing, saveFollowing, type FollowingState } from "@/lib/following";
-import { followingByUserId, users } from "@/lib/mock-data";
+import { followingByUserId } from "@/lib/mock-data";
+import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { useAuth } from "@/providers/auth-provider";
 
 interface FollowingContextValue {
@@ -19,30 +20,31 @@ const FollowingContext = createContext<FollowingContextValue | undefined>(undefi
 export function FollowingProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const currentUserId = user?.id ?? null;
-  const [state, setState] = useState<FollowingState>(followingByUserId);
+  const defaultState = hasSupabaseEnv() ? {} : followingByUserId;
+  const [state, setState] = useState<FollowingState>(defaultState);
 
   useEffect(() => {
-    setState(readFollowing(followingByUserId));
-  }, []);
+    setState(readFollowing(defaultState));
+  }, [defaultState]);
 
   const value = useMemo<FollowingContextValue>(
     () => ({
       currentUserId,
-      followingIds: currentUserId ? state[currentUserId] ?? followingByUserId[currentUserId] ?? [] : [],
+      followingIds: currentUserId ? state[currentUserId] ?? defaultState[currentUserId] ?? [] : [],
       followingMap: state,
       isFollowing(targetUserId) {
         if (!currentUserId) {
           return false;
         }
 
-        return (state[currentUserId] ?? followingByUserId[currentUserId] ?? []).includes(targetUserId);
+        return (state[currentUserId] ?? defaultState[currentUserId] ?? []).includes(targetUserId);
       },
       toggleFollowing(targetUserId) {
         if (!currentUserId || targetUserId === currentUserId) {
           return;
         }
 
-        const currentFollowing = state[currentUserId] ?? followingByUserId[currentUserId] ?? [];
+        const currentFollowing = state[currentUserId] ?? defaultState[currentUserId] ?? [];
         const nextFollowing = currentFollowing.includes(targetUserId)
           ? currentFollowing.filter((id) => id !== targetUserId)
           : [...currentFollowing, targetUserId];
@@ -56,7 +58,7 @@ export function FollowingProvider({ children }: { children: React.ReactNode }) {
         saveFollowing(nextState);
       }
     }),
-    [currentUserId, state]
+    [currentUserId, defaultState, state]
   );
 
   return <FollowingContext.Provider value={value}>{children}</FollowingContext.Provider>;

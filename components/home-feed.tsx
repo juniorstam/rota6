@@ -53,15 +53,12 @@ export function HomeFeed({
     [initialTrips, localTrips, useSupabase, visibleAuthorIds]
   );
   const visibleTrips = followedTrips.length > 0 ? followedTrips : allPublicTrips;
-
-  if (loading) {
-    return <div className="mx-auto max-w-3xl space-y-4" />;
-  }
+  const tripsToRender = loading ? allPublicTrips : visibleTrips;
 
   return (
     <div className="mx-auto max-w-3xl space-y-4">
-      {visibleTrips.length > 0 ? (
-        visibleTrips.map((trip) => <RouteFeedCard key={trip.id} trip={trip} />)
+      {tripsToRender.length > 0 ? (
+        tripsToRender.map((trip) => <RouteFeedCard key={trip.id} trip={trip} />)
       ) : (
         <div className="rounded-[24px] border border-dashed border-border bg-surface p-6 text-sm text-muted">
           {user ? (

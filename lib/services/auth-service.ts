@@ -277,10 +277,13 @@ export const authService = {
 
     const supabase = getSupabaseBrowserClient();
     const {
-      data: { user }
-    } = await supabase.auth.getUser();
+      data: { session }
+    } = await supabase.auth.getSession();
+
+    const user = session?.user;
 
     if (!user?.id) {
+      clearSession();
       throw new Error("Sua sessao expirou. Entre novamente para salvar o perfil.");
     }
 

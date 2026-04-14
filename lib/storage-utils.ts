@@ -3,6 +3,7 @@
 const KNOWN_STORAGE_KEYS = [
   "rota6-session",
   "rota6-local-users",
+  "rota6-following",
   "rota6.publish-drafts.v1",
   "rota6.published-trips.v1"
 ] as const;

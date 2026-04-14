@@ -80,18 +80,10 @@ export async function uploadProfileImage({
 }) {
   const supabase = getSupabaseBrowserClient();
   const {
-    data: { user }
-  } = await supabase.auth.getUser();
-
-  if (!user?.id) {
-    throw new Error("Sua sessao expirou. Entre novamente antes de enviar imagens.");
-  }
-
-  const {
     data: { session }
   } = await supabase.auth.getSession();
 
-  if (!session?.access_token) {
+  if (!session?.access_token || !session.user?.id) {
     throw new Error("Sua sessao expirou. Entre novamente antes de enviar imagens.");
   }
 

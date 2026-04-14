@@ -74,6 +74,18 @@ interface PublishDraft {
   stops: DraftStop[];
 }
 
+function stripTransientDraftPhoto(photo: DraftPhoto | null) {
+  if (!photo) {
+    return null;
+  }
+
+  return {
+    id: photo.id,
+    name: photo.name,
+    previewUrl: photo.previewUrl.startsWith("data:image/") ? "" : photo.previewUrl
+  };
+}
+
 const EMPTY_STOP = (): DraftStop => ({
   id: crypto.randomUUID(),
   label: "",
@@ -509,9 +521,11 @@ export function PublishTripFlow() {
       summary: draft.summary.trim(),
       origin: draft.origin.trim(),
       destination: draft.destination.trim(),
-      coverPhoto: hasSupabaseEnv() ? coverPhoto && { ...coverPhoto, uploadDataUrl: undefined } : coverPhoto,
+      coverPhoto: hasSupabaseEnv() ? stripTransientDraftPhoto(coverPhoto) : coverPhoto,
       galleryPhotos: hasSupabaseEnv()
-        ? galleryPhotos.map((photo) => ({ ...photo, uploadDataUrl: undefined }))
+        ? galleryPhotos
+            .map((photo) => stripTransientDraftPhoto(photo))
+            .filter((photo): photo is NonNullable<ReturnType<typeof stripTransientDraftPhoto>> => Boolean(photo))
         : galleryPhotos,
       updatedAt: new Date().toISOString()
     };
