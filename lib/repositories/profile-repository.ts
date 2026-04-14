@@ -1,9 +1,9 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { mapProfileRowToUserProfile } from "@/lib/supabase/mappers";
 import { UserProfile } from "@/lib/types";
 
 export async function listProfilesFromDb(): Promise<UserProfile[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase.from("profiles").select("*").order("name", { ascending: true });
 
   if (error) {
@@ -14,7 +14,7 @@ export async function listProfilesFromDb(): Promise<UserProfile[]> {
 }
 
 export async function getProfileByUsernameFromDb(username: string): Promise<UserProfile | null> {
-  const supabase = createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("profiles")
     .select("*")
@@ -29,7 +29,7 @@ export async function getProfileByUsernameFromDb(username: string): Promise<User
 }
 
 export async function isUsernameAvailable(username: string, excludeUserId?: string) {
-  const supabase = createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   let query = supabase.from("profiles").select("id").eq("username", username);
 
   if (excludeUserId) {

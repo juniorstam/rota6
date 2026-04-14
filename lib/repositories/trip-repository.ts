@@ -1,9 +1,9 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { mapTripRowToPublishedTrip } from "@/lib/supabase/mappers";
 import { PublishedTrip } from "@/lib/types";
 
 export async function listPublicTripsFromDb() {
-  const supabase = createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("trips")
     .select(

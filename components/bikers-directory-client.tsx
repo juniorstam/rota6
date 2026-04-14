@@ -8,6 +8,7 @@ import { LOCAL_PROFILES_EVENT, getMergedProfiles } from "@/lib/local-profiles";
 import { trips } from "@/lib/mock-data";
 import { PUBLISHED_TRIPS_EVENT, readPublishedTrips } from "@/lib/published-trips";
 import { PublishedTrip, UserProfile } from "@/lib/types";
+import { useAuth } from "@/providers/auth-provider";
 
 export function BikersDirectoryClient({
   initialQuery,
@@ -20,6 +21,7 @@ export function BikersDirectoryClient({
   initialTrips: PublishedTrip[];
   useSupabase: boolean;
 }) {
+  const { user } = useAuth();
   const [profiles, setProfiles] = useState<UserProfile[]>(() => (useSupabase ? initialProfiles : getMergedProfiles()));
   const [localTrips, setLocalTrips] = useState<PublishedTrip[]>(() => (useSupabase ? initialTrips : readPublishedTrips()));
 
@@ -50,12 +52,14 @@ export function BikersDirectoryClient({
   }, [initialProfiles, initialTrips, useSupabase]);
 
   const filteredUsers = useMemo(() => {
+    const mergedProfiles =
+      useSupabase && user && !profiles.some((profile) => profile.id === user.id) ? [user, ...profiles] : profiles;
     const query = initialQuery.trim().toLowerCase();
     if (!query) {
-      return profiles;
+      return mergedProfiles;
     }
 
-    return profiles.filter((user) =>
+    return mergedProfiles.filter((user) =>
       [
         user.name,
         user.username,
@@ -71,7 +75,7 @@ export function BikersDirectoryClient({
         .filter(Boolean)
         .some((entry) => String(entry).toLowerCase().includes(query))
     );
-  }, [initialQuery, profiles]);
+  }, [initialQuery, profiles, useSupabase, user]);
 
   return (
     <div className="space-y-8">
@@ -82,8 +86,9 @@ export function BikersDirectoryClient({
         targetPath="/bikers"
       />
 
-      <div className="grid gap-5 lg:grid-cols-2">
-        {filteredUsers.map((user) => {
+      {filteredUsers.length > 0 ? (
+        <div className="grid gap-5 lg:grid-cols-2">
+          {filteredUsers.map((user) => {
           const baseTrips = useSupabase ? initialTrips : trips;
           const mockTripCount = baseTrips.filter((trip) => trip.author.id === user.id).length;
           const mockPhotoCount = baseTrips
@@ -103,8 +108,14 @@ export function BikersDirectoryClient({
               photoCount={mockPhotoCount + localPhotoCount}
             />
           );
-        })}
-      </div>
+          })}
+        </div>
+      ) : (
+        <div className="rounded-[24px] border border-dashed border-border bg-surface p-6 text-sm text-muted">
+          Nenhum biker apareceu por enquanto. Se você acabou de criar contas, entre nelas novamente para concluir a
+          sincronização do perfil público.
+        </div>
+      )}
     </div>
   );
 }

@@ -64,11 +64,17 @@ export function ExploreFeedClient({
       />
 
       <section className="space-y-5">
-        <div className="grid gap-5 xl:grid-cols-2">
-          {filteredTrips.map((trip) => (
-            <TripCard key={trip.id} trip={trip} />
-          ))}
-        </div>
+        {filteredTrips.length > 0 ? (
+          <div className="grid gap-5 xl:grid-cols-2">
+            {filteredTrips.map((trip) => (
+              <TripCard key={trip.id} trip={trip} />
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-[24px] border border-dashed border-border bg-surface p-6 text-sm text-muted">
+            Ainda não há viagens públicas para explorar. Assim que alguém publicar no banco real, elas aparecem aqui.
+          </div>
+        )}
       </section>
     </div>
   );
