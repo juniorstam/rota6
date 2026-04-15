@@ -11,6 +11,15 @@ import {
   listPublicTripsFromDb
 } from "@/lib/repositories/trip-repository";
 
+function toPublicProfile(profile: UserProfile): UserProfile {
+  return {
+    ...profile,
+    email: "",
+    contactEmail: undefined,
+    isAdmin: false
+  };
+}
+
 export async function getBikersPageData(): Promise<{
   profiles: UserProfile[];
   trips: PublishedTrip[];
@@ -18,10 +27,10 @@ export async function getBikersPageData(): Promise<{
 }> {
   if (hasSupabaseEnv()) {
     const [profiles, trips] = await Promise.all([listProfilesFromDb(), listPublicTripsFromDb()]);
-    return { profiles, trips, useSupabase: true };
+    return { profiles: profiles.map(toPublicProfile), trips, useSupabase: true };
   }
 
-  return { profiles: mockUsers, trips: mockTrips, useSupabase: false };
+  return { profiles: mockUsers.map(toPublicProfile), trips: mockTrips, useSupabase: false };
 }
 
 export async function getExplorePageData(): Promise<{
@@ -51,8 +60,8 @@ export async function getProfilePageData(username: string): Promise<{
     const profileTrips = allTrips.filter((trip) => trip.author.username === username);
 
     return {
-      profile,
-      allProfiles,
+      profile: profile ? toPublicProfile(profile) : null,
+      allProfiles: allProfiles.map(toPublicProfile),
       profileTrips,
       profilePhotos: profileTrips.flatMap((trip) => trip.photos),
       useSupabase: true
@@ -63,8 +72,8 @@ export async function getProfilePageData(username: string): Promise<{
   const profileTrips = mockTrips.filter((trip) => trip.author.username === username);
 
   return {
-    profile,
-    allProfiles: mockUsers,
+    profile: profile ? toPublicProfile(profile) : null,
+    allProfiles: mockUsers.map(toPublicProfile),
     profileTrips,
     profilePhotos: profileTrips.flatMap((trip) => trip.photos),
     useSupabase: false
