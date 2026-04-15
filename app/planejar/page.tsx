@@ -1,21 +1,17 @@
-import { RoutePlanner } from "@/components/route-planner";
-import { defaultRoute } from "@/lib/mock-data";
+import { Suspense } from "react";
 
-export default async function PlanPage({
-  searchParams
-}: {
-  searchParams: Promise<{ origem?: string; destino?: string; parada?: string | string[] }>;
-}) {
-  const params = await searchParams;
-  const rawStops = params.parada;
-  const initialStops = Array.isArray(rawStops) ? rawStops : rawStops ? [rawStops] : undefined;
+import { RoutePlannerScreen } from "@/components/rebuild/route-planner-screen";
 
+export default function PlannerPage() {
   return (
-    <RoutePlanner
-      initialRoute={defaultRoute}
-      initialOrigin={params.origem}
-      initialDestination={params.destino}
-      initialStops={initialStops}
-    />
+    <Suspense
+      fallback={
+        <section className="rounded-[20px] border border-border bg-surface p-5 text-sm text-muted">
+          Carregando planejador...
+        </section>
+      }
+    >
+      <RoutePlannerScreen />
+    </Suspense>
   );
 }
