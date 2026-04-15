@@ -75,6 +75,14 @@ create table if not exists motorcycles (
   created_at timestamptz not null default now()
 );
 
+create table if not exists follows (
+  follower_id uuid not null references profiles(id) on delete cascade,
+  followed_id uuid not null references profiles(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (follower_id, followed_id),
+  constraint follows_self_check check (follower_id <> followed_id)
+);
+
 create table if not exists place_categories (
   id uuid primary key default gen_random_uuid(),
   slug text unique not null,
@@ -223,6 +231,7 @@ create table if not exists admin_flags (
 );
 
 create index if not exists idx_profiles_username on profiles(username);
+create index if not exists idx_follows_followed_id on follows(followed_id);
 create index if not exists idx_places_category_id on places(category_id);
 create index if not exists idx_places_featured on places(is_featured);
 create index if not exists idx_places_geo on places(latitude, longitude);
@@ -236,6 +245,7 @@ create index if not exists idx_comments_place_id on comments(place_id);
 create index if not exists idx_favorites_user_id on favorites(user_id);
 
 alter table profiles enable row level security;
+alter table follows enable row level security;
 alter table trips enable row level security;
 alter table trip_stops enable row level security;
 alter table trip_photos enable row level security;
@@ -253,6 +263,18 @@ using (auth.uid() = id);
 create policy "users insert own profile"
 on profiles for insert
 with check (auth.uid() = id);
+
+create policy "follows are public for read"
+on follows for select
+using (true);
+
+create policy "users insert own follows"
+on follows for insert
+with check (auth.uid() = follower_id);
+
+create policy "users delete own follows"
+on follows for delete
+using (auth.uid() = follower_id);
 
 create policy "public trips are readable"
 on trips for select
