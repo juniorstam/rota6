@@ -25,11 +25,6 @@ export function FollowingProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<FollowingState>(defaultState);
 
   useEffect(() => {
-    if (supabaseMode) {
-      setState({});
-      return;
-    }
-
     setState(readFollowing(defaultState));
   }, [defaultState, supabaseMode]);
 
@@ -39,14 +34,14 @@ export function FollowingProvider({ children }: { children: React.ReactNode }) {
       followingIds: currentUserId ? state[currentUserId] ?? defaultState[currentUserId] ?? [] : [],
       followingMap: state,
       isFollowing(targetUserId) {
-        if (supabaseMode || !currentUserId) {
+        if (!currentUserId) {
           return false;
         }
 
         return (state[currentUserId] ?? defaultState[currentUserId] ?? []).includes(targetUserId);
       },
       toggleFollowing(targetUserId) {
-        if (supabaseMode || !currentUserId || targetUserId === currentUserId) {
+        if (!currentUserId || targetUserId === currentUserId) {
           return;
         }
 
@@ -64,7 +59,7 @@ export function FollowingProvider({ children }: { children: React.ReactNode }) {
         saveFollowing(nextState);
       }
     }),
-    [currentUserId, defaultState, state, supabaseMode]
+    [currentUserId, defaultState, state]
   );
 
   return <FollowingContext.Provider value={value}>{children}</FollowingContext.Provider>;

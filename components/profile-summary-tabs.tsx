@@ -47,8 +47,8 @@ export function ProfileSummaryTabs({
   } as const;
 
   return (
-    <nav className="sticky top-[88px] z-20 rounded-[28px] border border-border bg-background/92 p-2 shadow-glow backdrop-blur-xl">
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+    <nav className="sticky top-[88px] z-20 rounded-[18px] border border-border bg-background/92 p-2 shadow-glow backdrop-blur-xl">
+      <div className="grid grid-cols-4 gap-2">
         {tabs.map(({ key, label, icon: Icon, buildHref }) => {
           const active = activeTab === key;
           return (
@@ -56,15 +56,17 @@ export function ProfileSummaryTabs({
               key={key}
               href={buildHref(username)}
               className={cn(
-                "rounded-[22px] border px-4 py-4 transition",
+                "min-w-0 rounded-[14px] border px-2 py-3 transition sm:px-4 sm:py-4",
                 active
-                  ? "border-accent bg-accent/10 shadow-[0_10px_30px_rgba(245,158,11,0.12)]"
+                  ? "border-accent bg-accent/10 shadow-[0_10px_30px_rgba(47,128,237,0.18)]"
                   : "border-transparent bg-surface hover:border-border hover:bg-surfaceAlt/70"
               )}
             >
-              <p className={cn("text-[11px] sm:text-xs", active ? "text-accentSoft" : "text-muted")}>{label}</p>
-              <p className="mt-2 inline-flex items-center gap-2 text-lg font-semibold text-text sm:text-2xl">
-                <Icon size={16} className="sm:h-[18px] sm:w-[18px]" />
+              <p className={cn("truncate text-[10px] uppercase tracking-[0.12em] sm:text-xs sm:normal-case sm:tracking-normal", active ? "text-accentSoft" : "text-muted")}>
+                {label}
+              </p>
+              <p className="mt-2 inline-flex items-center gap-1.5 text-base font-semibold text-text sm:gap-2 sm:text-2xl">
+                <Icon size={15} className="sm:h-[18px] sm:w-[18px]" />
                 {counters[key]}
               </p>
             </Link>

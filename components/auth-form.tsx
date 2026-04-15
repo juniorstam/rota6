@@ -8,9 +8,11 @@ import { useAuth } from "@/providers/auth-provider";
 
 interface AuthFormProps {
   mode: "login" | "signup";
+  onSuccess?: () => void;
+  hideSwitcher?: boolean;
 }
 
-export function AuthForm({ mode }: AuthFormProps) {
+export function AuthForm({ mode, onSuccess, hideSwitcher = false }: AuthFormProps) {
   const router = useRouter();
   const { login, signup, requestPasswordReset } = useAuth();
   const [email, setEmail] = useState("");
@@ -33,6 +35,9 @@ export function AuthForm({ mode }: AuthFormProps) {
       }
 
       setLoading(false);
+      if (onSuccess) {
+        onSuccess();
+      }
       router.push(mode === "signup" ? "/perfil/editar" : "/");
       router.refresh();
     } catch (error) {
@@ -109,12 +114,24 @@ export function AuthForm({ mode }: AuthFormProps) {
         </button>
       </form>
 
-      <div className="mt-5 flex items-center justify-between text-sm text-muted">
-        <Link href={mode === "login" ? "/cadastro" : "/login"} className="text-text">
-          {mode === "login" ? "Criar conta" : "Já tenho conta"}
-        </Link>
+      {!hideSwitcher ? (
+        <div className="mt-5 flex items-center justify-between text-sm text-muted">
+          <Link href={mode === "login" ? "/cadastro" : "/login"} className="text-text">
+            {mode === "login" ? "Criar conta" : "Já tenho conta"}
+          </Link>
 
-        {mode === "login" && (
+          {mode === "login" && (
+            <button
+              type="button"
+              className="text-muted underline underline-offset-4"
+              onClick={async () => setMessage(await requestPasswordReset(email))}
+            >
+              Esqueci a senha
+            </button>
+          )}
+        </div>
+      ) : mode === "login" ? (
+        <div className="mt-5 text-right text-sm text-muted">
           <button
             type="button"
             className="text-muted underline underline-offset-4"
@@ -122,8 +139,8 @@ export function AuthForm({ mode }: AuthFormProps) {
           >
             Esqueci a senha
           </button>
-        )}
-      </div>
+        </div>
+      ) : null}
 
       {message && <p className="mt-4 rounded-2xl bg-background px-4 py-3 text-sm text-muted">{message}</p>}
     </section>

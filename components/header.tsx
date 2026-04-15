@@ -22,7 +22,7 @@ export function Header() {
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/90 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-4 md:px-6">
         <Link href="/" className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-accent/40 bg-[linear-gradient(180deg,rgba(245,158,11,0.2),rgba(245,158,11,0.06))] text-accent shadow-[0_12px_30px_rgba(245,158,11,0.12)]">
+          <div className="flex h-11 w-11 items-center justify-center rounded-[14px] border border-accent/40 bg-[linear-gradient(180deg,rgba(47,128,237,0.22),rgba(47,128,237,0.08))] text-accent shadow-[0_12px_30px_rgba(47,128,237,0.18)]">
             <Map size={20} />
           </div>
           <div>
@@ -38,8 +38,8 @@ export function Header() {
                 key={href}
                 href={href}
                 className={cn(
-                  "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm transition",
-                  active ? "bg-accent text-background" : "text-muted hover:bg-surface hover:text-text"
+                  "inline-flex items-center gap-2 rounded-[12px] px-4 py-2 text-sm transition",
+                  active ? "bg-accent text-background" : "text-muted hover:bg-surfaceAlt hover:text-text"
                 )}
               >
                 <Icon size={16} />

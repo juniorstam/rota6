@@ -2,6 +2,68 @@ import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/sup
 import { mapProfileRowToUserProfile } from "@/lib/supabase/mappers";
 import { UserProfile } from "@/lib/types";
 
+function normalizeUsername(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "")
+    .trim();
+}
+
+async function ensureProfilesForAuthUsers() {
+  const supabase = createSupabaseAdminClient();
+  const [{ data: profileRows, error: profilesError }, { data: authRows, error: authError }] = await Promise.all([
+    supabase.from("profiles").select("id, username, email"),
+    supabase.auth.admin.listUsers({ page: 1, perPage: 200 })
+  ]);
+
+  if (profilesError) {
+    throw profilesError;
+  }
+
+  if (authError) {
+    throw authError;
+  }
+
+  const existingIds = new Set((profileRows ?? []).map((row) => row.id));
+  const existingUsernames = new Set((profileRows ?? []).map((row) => row.username));
+  const missingProfiles =
+    authRows.users?.filter((authUser) => authUser.email && !existingIds.has(authUser.id)) ?? [];
+
+  if (missingProfiles.length === 0) {
+    return;
+  }
+
+  const rowsToInsert = missingProfiles.map((authUser) => {
+    const email = authUser.email ?? "";
+    const metadata = authUser.user_metadata ?? {};
+    const preferredUsername = normalizeUsername(String(metadata.username ?? email.split("@")[0] ?? "motociclista"));
+    let username = preferredUsername || `biker${authUser.id.slice(0, 6)}`;
+
+    while (existingUsernames.has(username)) {
+      username = `${preferredUsername || "biker"}${authUser.id.slice(0, 4)}`;
+    }
+
+    existingUsernames.add(username);
+
+    return {
+      id: authUser.id,
+      email,
+      username,
+      name: String(metadata.name ?? email.split("@")[0] ?? "Novo motociclista"),
+      contact_email: email,
+      travel_style: "solo"
+    };
+  });
+
+  const { error } = await supabase.from("profiles").upsert(rowsToInsert as never[], { onConflict: "id" });
+
+  if (error) {
+    throw error;
+  }
+}
+
 async function getPublicTripCountsByUserId(userIds: string[]) {
   if (userIds.length === 0) {
     return new Map<string, number>();
@@ -35,6 +97,7 @@ function attachDerivedProfileCounts(profiles: UserProfile[], tripCounts: Map<str
 }
 
 export async function listProfilesFromDb(): Promise<UserProfile[]> {
+  await ensureProfilesForAuthUsers();
   const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase.from("profiles").select("*").order("name", { ascending: true });
 
@@ -49,6 +112,7 @@ export async function listProfilesFromDb(): Promise<UserProfile[]> {
 }
 
 export async function getProfileByUsernameFromDb(username: string): Promise<UserProfile | null> {
+  await ensureProfilesForAuthUsers();
   const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("profiles")

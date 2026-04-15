@@ -10,23 +10,23 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "#F8FAFC",
-        surface: "#FFFFFF",
-        surfaceAlt: "#EEF2F7",
-        border: "#D7DEE8",
-        text: "#0F172A",
-        muted: "#64748B",
-        accent: "#F97316",
-        accentSoft: "#C2410C",
+        background: "#0B0F14",
+        surface: "#121820",
+        surfaceAlt: "#1A2330",
+        border: "#283446",
+        text: "#E8EEF7",
+        muted: "#93A4BA",
+        accent: "#2F80ED",
+        accentSoft: "#79AFFF",
         success: "#22C55E",
         danger: "#F87171"
       },
       boxShadow: {
-        glow: "0 20px 50px rgba(15, 23, 42, 0.08)"
+        glow: "0 18px 40px rgba(0, 0, 0, 0.28)"
       },
       backgroundImage: {
         "hero-grid":
-          "radial-gradient(circle at top left, rgba(249, 115, 22, 0.14), transparent 28%), radial-gradient(circle at top right, rgba(15, 23, 42, 0.08), transparent 24%), linear-gradient(180deg, rgba(255,255,255,0.9), rgba(248,250,252,0.6))"
+          "radial-gradient(circle at top left, rgba(47,128,237,0.16), transparent 26%), radial-gradient(circle at top right, rgba(9,14,20,0.42), transparent 24%), linear-gradient(180deg, rgba(18,24,32,0.96), rgba(11,15,20,0.98))"
       }
     }
   },

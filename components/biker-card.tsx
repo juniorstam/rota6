@@ -17,11 +17,11 @@ export function BikerCard({
   const locationLabel = [user.city, user.state].filter(Boolean).join(", ") || "Localizacao em configuracao";
 
   return (
-    <article className="rounded-[24px] border border-border bg-surface p-4 shadow-glow sm:p-5">
+    <article className="rounded-[18px] border border-border bg-surface p-4 shadow-glow sm:p-5">
       <div className="space-y-3">
         <div className="flex items-start gap-3">
           <Link href={`/perfil/${user.username}`} className="flex min-w-0 flex-1 items-start gap-3">
-            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[20px] sm:h-20 sm:w-20 sm:rounded-[24px]">
+            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[16px] sm:h-20 sm:w-20 sm:rounded-[18px]">
               <Image src={user.avatarUrl} alt={user.name} fill className="object-cover" />
             </div>
             <div className="min-w-0">

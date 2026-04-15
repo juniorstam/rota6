@@ -252,9 +252,14 @@ export const authService = {
     }
 
     const supabase = getSupabaseBrowserClient();
-    const {
+    let {
       data: { session }
     } = await supabase.auth.getSession();
+
+    if (!session?.user?.id) {
+      const { data } = await supabase.auth.refreshSession();
+      session = data.session;
+    }
 
     if (!session?.user?.id) {
       clearSession();
@@ -276,9 +281,14 @@ export const authService = {
     }
 
     const supabase = getSupabaseBrowserClient();
-    const {
+    let {
       data: { session }
     } = await supabase.auth.getSession();
+
+    if (!session?.user?.id) {
+      const { data } = await supabase.auth.refreshSession();
+      session = data.session;
+    }
 
     const user = session?.user;
 

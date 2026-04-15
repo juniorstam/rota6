@@ -210,7 +210,7 @@ export function ProfileEditorForm() {
 
   if (loading) {
     return (
-      <section className="rounded-[32px] border border-border bg-surface p-8 text-sm text-muted">
+      <section className="rounded-[20px] border border-border bg-surface p-8 text-sm text-muted">
         Carregando seu perfil...
       </section>
     );
@@ -218,7 +218,7 @@ export function ProfileEditorForm() {
 
   if (!user) {
     return (
-      <section className="rounded-[32px] border border-border bg-surface p-8 text-center">
+      <section className="rounded-[20px] border border-border bg-surface p-8 text-center">
         <p className="text-xs uppercase tracking-[0.24em] text-accentSoft">Perfil</p>
         <h1 className="mt-3 text-3xl font-semibold text-text">Entre para montar seu perfil</h1>
         <p className="mt-3 text-sm leading-6 text-muted">
@@ -244,7 +244,7 @@ export function ProfileEditorForm() {
 
   return (
     <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-      <form onSubmit={handleSubmit} className="space-y-6 rounded-[32px] border border-border bg-surface p-6 md:p-8">
+      <form onSubmit={handleSubmit} className="space-y-6 rounded-[20px] border border-border bg-surface p-6 md:p-8">
         <div>
           <p className="text-xs uppercase tracking-[0.24em] text-accentSoft">Seu perfil</p>
           <h1 className="mt-2 text-3xl font-semibold text-text">Monte sua identidade dentro da Rota 6</h1>
@@ -261,7 +261,7 @@ export function ProfileEditorForm() {
               <input
                 value={name}
                 onChange={(event) => setName(event.target.value)}
-                className="h-14 w-full rounded-[20px] border border-border bg-background px-4 text-sm text-text outline-none focus:border-accent"
+                className="h-14 w-full rounded-[14px] border border-border bg-background px-4 text-sm text-text outline-none focus:border-accent"
                 placeholder="Como voce quer aparecer"
               />
             </label>
@@ -271,7 +271,7 @@ export function ProfileEditorForm() {
               <input
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
-                className="h-14 w-full rounded-[20px] border border-border bg-background px-4 text-sm text-text outline-none focus:border-accent"
+                className="h-14 w-full rounded-[14px] border border-border bg-background px-4 text-sm text-text outline-none focus:border-accent"
                 placeholder="Seu username unico"
               />
             </label>
@@ -283,7 +283,7 @@ export function ProfileEditorForm() {
               value={bio}
               onChange={(event) => setBio(event.target.value)}
               rows={4}
-              className="w-full rounded-[24px] border border-border bg-background px-4 py-4 text-sm text-text outline-none focus:border-accent"
+              className="w-full rounded-[16px] border border-border bg-background px-4 py-4 text-sm text-text outline-none focus:border-accent"
               placeholder="Conte um pouco sobre seu estilo de viagem, regiao que costuma rodar e o que gosta de compartilhar."
             />
           </label>
@@ -300,7 +300,7 @@ export function ProfileEditorForm() {
               <input
                 value={city}
                 onChange={(event) => setCity(event.target.value)}
-                className="h-14 w-full rounded-[20px] border border-border bg-background px-4 text-sm text-text outline-none focus:border-accent"
+                className="h-14 w-full rounded-[14px] border border-border bg-background px-4 text-sm text-text outline-none focus:border-accent"
                 placeholder="Cidade onde mora"
               />
             </label>
@@ -310,7 +310,7 @@ export function ProfileEditorForm() {
               <input
                 value={state}
                 onChange={(event) => setState(event.target.value)}
-                className="h-14 w-full rounded-[20px] border border-border bg-background px-4 text-sm text-text outline-none focus:border-accent"
+                className="h-14 w-full rounded-[14px] border border-border bg-background px-4 text-sm text-text outline-none focus:border-accent"
                 placeholder="UF"
               />
             </label>
@@ -320,7 +320,7 @@ export function ProfileEditorForm() {
               <input
                 value={region}
                 onChange={(event) => setRegion(event.target.value)}
-                className="h-14 w-full rounded-[20px] border border-border bg-background px-4 text-sm text-text outline-none focus:border-accent"
+                className="h-14 w-full rounded-[14px] border border-border bg-background px-4 text-sm text-text outline-none focus:border-accent"
                 placeholder="Ex.: litoral, serra, capital"
               />
             </label>
@@ -339,7 +339,7 @@ export function ProfileEditorForm() {
                 type="email"
                 value={contactEmail}
                 onChange={(event) => setContactEmail(event.target.value)}
-                className="h-14 w-full rounded-[20px] border border-border bg-background px-4 text-sm text-text outline-none focus:border-accent"
+                className="h-14 w-full rounded-[14px] border border-border bg-background px-4 text-sm text-text outline-none focus:border-accent"
                 placeholder="Para combinacoes e parcerias"
               />
             </label>
@@ -349,7 +349,7 @@ export function ProfileEditorForm() {
               <input
                 value={phone}
                 onChange={(event) => setPhone(formatPhone(event.target.value))}
-                className="h-14 w-full rounded-[20px] border border-border bg-background px-4 text-sm text-text outline-none focus:border-accent"
+                className="h-14 w-full rounded-[14px] border border-border bg-background px-4 text-sm text-text outline-none focus:border-accent"
                 placeholder="(11) 99999-9999"
               />
             </label>
@@ -360,7 +360,7 @@ export function ProfileEditorForm() {
             <input
               value={instagramHandle}
               onChange={(event) => setInstagramHandle(normalizeInstagramHandle(event.target.value))}
-              className="h-14 w-full rounded-[20px] border border-border bg-background px-4 text-sm text-text outline-none focus:border-accent"
+              className="h-14 w-full rounded-[14px] border border-border bg-background px-4 text-sm text-text outline-none focus:border-accent"
               placeholder="seuinstagram"
             />
           </label>
@@ -377,7 +377,7 @@ export function ProfileEditorForm() {
               <input
                 value={motorcycleBrand}
                 onChange={(event) => setMotorcycleBrand(event.target.value)}
-                className="h-14 w-full rounded-[20px] border border-border bg-background px-4 text-sm text-text outline-none focus:border-accent"
+                className="h-14 w-full rounded-[14px] border border-border bg-background px-4 text-sm text-text outline-none focus:border-accent"
                 placeholder="Ex.: Honda, BMW, Triumph"
               />
             </label>
@@ -387,7 +387,7 @@ export function ProfileEditorForm() {
               <input
                 value={motorcycleModel}
                 onChange={(event) => setMotorcycleModel(event.target.value)}
-                className="h-14 w-full rounded-[20px] border border-border bg-background px-4 text-sm text-text outline-none focus:border-accent"
+                className="h-14 w-full rounded-[14px] border border-border bg-background px-4 text-sm text-text outline-none focus:border-accent"
                 placeholder="Ex.: Africa Twin, GS 800"
               />
             </label>
@@ -396,7 +396,7 @@ export function ProfileEditorForm() {
 
         <section className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
-            <label className="block rounded-[24px] border border-dashed border-border bg-background/70 p-4">
+            <label className="block rounded-[16px] border border-dashed border-border bg-background/70 p-4">
               <span className="mb-2 flex items-center gap-2 text-sm font-medium text-text">
                 <Camera size={16} />
                 Foto pessoal
@@ -407,7 +407,7 @@ export function ProfileEditorForm() {
               <input type="file" accept="image/*" onChange={(event) => void handleImageChange(event, "avatar")} />
             </label>
 
-            <label className="block rounded-[24px] border border-dashed border-border bg-background/70 p-4">
+            <label className="block rounded-[16px] border border-dashed border-border bg-background/70 p-4">
               <span className="mb-2 flex items-center gap-2 text-sm font-medium text-text">
                 <Camera size={16} />
                 Imagem de capa
@@ -438,11 +438,11 @@ export function ProfileEditorForm() {
           </Link>
         </div>
 
-        {message ? <p className="rounded-2xl bg-background px-4 py-3 text-sm text-muted">{message}</p> : null}
+        {message ? <p className="rounded-[14px] bg-background px-4 py-3 text-sm text-muted">{message}</p> : null}
       </form>
 
       <aside className="space-y-5">
-        <section className="overflow-hidden rounded-[32px] border border-border bg-surface">
+        <section className="overflow-hidden rounded-[20px] border border-border bg-surface">
           <div
             className="h-40 w-full bg-cover bg-center"
             style={{ backgroundImage: `url("${coverUrl || getDefaultCoverUrl()}")` }}
@@ -469,7 +469,7 @@ export function ProfileEditorForm() {
                     href={`https://www.instagram.com/${normalizeInstagramHandle(instagramHandle)}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="rounded-full bg-background px-4 py-2 transition hover:text-text"
+                className="rounded-full bg-background px-4 py-2 transition hover:text-text"
                   >
                     {normalizeInstagramHandle(instagramHandle)}
                   </a>
@@ -480,7 +480,7 @@ export function ProfileEditorForm() {
           </div>
         </section>
 
-        <section className="rounded-[32px] border border-border bg-surface p-5">
+        <section className="rounded-[20px] border border-border bg-surface p-5">
           <div className="flex items-center gap-2 text-sm font-medium text-text">
             <UserRound size={16} />
             O que vale preencher primeiro

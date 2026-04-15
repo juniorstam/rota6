@@ -36,7 +36,7 @@ export function SearchBar({
 
   return (
     <form
-      className="flex w-full flex-col gap-3 rounded-[28px] border border-border/80 bg-surface/90 p-3 shadow-glow md:flex-row"
+      className="flex w-full flex-col gap-3 rounded-[18px] border border-border/80 bg-surface/90 p-3 shadow-glow md:flex-row"
       onSubmit={handleSubmit}
     >
       <label className="relative flex-1">
@@ -44,13 +44,13 @@ export function SearchBar({
         <input
           value={value}
           onChange={(event) => setValue(event.target.value)}
-          className="h-14 w-full rounded-[22px] border border-border bg-background/70 pl-11 pr-4 text-sm text-text outline-none ring-0 transition placeholder:text-muted focus:border-accent"
+          className="h-14 w-full rounded-[14px] border border-border bg-background/70 pl-11 pr-4 text-sm text-text outline-none ring-0 transition placeholder:text-muted focus:border-accent"
           placeholder={placeholder}
         />
       </label>
       <button
         type="submit"
-        className="inline-flex h-14 items-center justify-center rounded-[22px] bg-accent px-5 text-sm font-semibold text-background"
+        className="inline-flex h-14 items-center justify-center rounded-[14px] bg-accent px-5 text-sm font-semibold text-background"
       >
         {buttonLabel}
       </button>

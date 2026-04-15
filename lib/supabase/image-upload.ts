@@ -79,9 +79,19 @@ export async function uploadProfileImage({
   type: "avatar" | "cover";
 }) {
   const supabase = getSupabaseBrowserClient();
-  const {
+  let {
     data: { session }
   } = await supabase.auth.getSession();
+
+  if (!session?.access_token || !session.user?.id) {
+    const { data, error } = await supabase.auth.refreshSession();
+
+    if (error) {
+      throw new Error("Sua sessao expirou. Entre novamente antes de enviar imagens.");
+    }
+
+    session = data.session;
+  }
 
   if (!session?.access_token || !session.user?.id) {
     throw new Error("Sua sessao expirou. Entre novamente antes de enviar imagens.");
