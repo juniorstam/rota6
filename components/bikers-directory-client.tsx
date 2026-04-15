@@ -8,7 +8,10 @@ import { LOCAL_PROFILES_EVENT, getMergedProfiles } from "@/lib/local-profiles";
 import { trips } from "@/lib/mock-data";
 import { PUBLISHED_TRIPS_EVENT, readPublishedTrips } from "@/lib/published-trips";
 import { PublishedTrip, UserProfile } from "@/lib/types";
-import { useAuth } from "@/providers/auth-provider";
+
+function normalizeUsername(value: string) {
+  return value.trim().toLowerCase();
+}
 
 export function BikersDirectoryClient({
   initialQuery,
@@ -21,7 +24,6 @@ export function BikersDirectoryClient({
   initialTrips: PublishedTrip[];
   useSupabase: boolean;
 }) {
-  const { user } = useAuth();
   const [profiles, setProfiles] = useState<UserProfile[]>(() => (useSupabase ? initialProfiles : getMergedProfiles()));
   const [localTrips, setLocalTrips] = useState<PublishedTrip[]>(() => (useSupabase ? initialTrips : readPublishedTrips()));
 
@@ -52,8 +54,10 @@ export function BikersDirectoryClient({
   }, [initialProfiles, initialTrips, useSupabase]);
 
   const filteredUsers = useMemo(() => {
-    const mergedProfiles =
-      useSupabase && user && !profiles.some((profile) => profile.id === user.id) ? [user, ...profiles] : profiles;
+    const mergedProfiles = profiles.filter((profile, index, entries) => {
+      const normalized = normalizeUsername(profile.username);
+      return entries.findIndex((entry) => normalizeUsername(entry.username) === normalized) === index;
+    });
     const query = initialQuery.trim().toLowerCase();
     if (!query) {
       return mergedProfiles;
@@ -75,7 +79,7 @@ export function BikersDirectoryClient({
         .filter(Boolean)
         .some((entry) => String(entry).toLowerCase().includes(query))
     );
-  }, [initialQuery, profiles, useSupabase, user]);
+  }, [initialQuery, profiles]);
 
   return (
     <div className="space-y-8">

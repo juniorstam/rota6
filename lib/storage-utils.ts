@@ -8,7 +8,7 @@ const KNOWN_STORAGE_KEYS = [
   "rota6.published-trips.v1"
 ] as const;
 
-const LEGACY_LOCAL_MODE_KEYS = ["rota6-local-users", "rota6.published-trips.v1"] as const;
+const LEGACY_LOCAL_MODE_KEYS = ["rota6-local-users", "rota6.published-trips.v1", "rota6-following"] as const;
 
 function sanitizeValue(value: unknown): unknown {
   if (typeof value === "string") {
