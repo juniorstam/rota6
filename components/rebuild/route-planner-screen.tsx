@@ -393,7 +393,10 @@ export function RoutePlannerScreen() {
     kind === "origin" ? "#4ade80" : kind === "destination" ? "#fb7185" : "#fbbf24";
 
   // ── Handlers drag painel superior ──
-  // O painel sai pela topo: offset 0 = visível, offset negativo = escondido
+  // PEEK_H: quantos px ficam visíveis quando o painel está "escondido"
+  // O handle fica nessa faixa, permitindo puxar de volta
+  const TOP_PEEK = 44;
+
   function onTopDragStart(e: React.PointerEvent) {
     e.currentTarget.setPointerCapture(e.pointerId);
     topDragStart.current = { y: e.clientY, offset: topOffset };
@@ -402,11 +405,11 @@ export function RoutePlannerScreen() {
     if (!topDragStart.current) return;
     const delta = e.clientY - topDragStart.current.y;
     const panelH = topRef.current?.offsetHeight ?? 200;
-    // Arrasta para cima (delta negativo): esconde. Para baixo: volta.
+    const minOffset = -(panelH - TOP_PEEK); // escondido mas com handle visível
     const raw = topDragStart.current.offset + delta;
-    // Resistência leve quando puxa além dos limites
-    const clamped = raw < -panelH ? -panelH - (raw + panelH) * 0.1
-                  : raw > 0       ? raw * 0.15
+    // Resistência suave nos extremos
+    const clamped = raw < minOffset ? minOffset + (raw - minOffset) * 0.15
+                  : raw > 0         ? raw * 0.15
                   : raw;
     setTopOffset(clamped);
   }
@@ -414,24 +417,27 @@ export function RoutePlannerScreen() {
     if (!topDragStart.current) return;
     const delta = e.clientY - topDragStart.current.y;
     const panelH = topRef.current?.offsetHeight ?? 200;
-    // Velocidade: se arrastou rápido para cima (> 200px/s estimado) → esconde
-    // Threshold: passou 35% da altura → esconde
-    const hide = delta < -(panelH * 0.35) || (topOffset < -(panelH * 0.2) && delta < -10);
-    setTopOffset(hide ? -panelH : 0);
+    const minOffset = -(panelH - TOP_PEEK);
+    const hide = delta < -(panelH * 0.3) || (topOffset < -(panelH * 0.25) && delta < 0);
+    setTopOffset(hide ? minOffset : 0);
     topDragStart.current = null;
   }
 
   // ── Handlers drag painel inferior com 3 snaps reais ──
-  // peek = 60px (só handle), mid = botões+stats visíveis, full = tudo
-  // Usamos translateY para mover suavemente durante o drag
   const [bottomDragDelta, setBottomDragDelta] = useState(0);
 
-  // Alturas reais por snap (estimadas; o CSS cuida do resto)
   const snapHeights: Record<"peek" | "mid" | "full", string> = {
-    peek: "60px",
-    mid:  "min(52vh, 340px)",
+    peek: "56px",
+    mid:  "min(48vh, 320px)",
     full: "85dvh",
   };
+
+  // Converte snap para altura numérica estimada (px) para calcular limites
+  function snapToPx(snap: "peek" | "mid" | "full"): number {
+    if (snap === "peek") return 56;
+    if (snap === "full") return window.innerHeight * 0.85;
+    return Math.min(window.innerHeight * 0.48, 320);
+  }
 
   function onBottomDragStart(e: React.PointerEvent) {
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -441,22 +447,25 @@ export function RoutePlannerScreen() {
   function onBottomDragMove(e: React.PointerEvent) {
     if (!bottomDragStart.current) return;
     const delta = e.clientY - bottomDragStart.current.y;
-    // Resistência nos extremos
-    const bounded = delta > 0 && bottomSnap === "peek"  ? delta * 0.12
-                  : delta < 0 && bottomSnap === "full"  ? delta * 0.12
-                  : delta;
+    // Sem resistência no range normal — movimento 1:1 com o dedo
+    // Resistência apenas nos extremos absolutos
+    const atBottom = bottomDragStart.current.snap === "peek" && delta > 0;
+    const atTop    = bottomDragStart.current.snap === "full" && delta < 0;
+    const bounded  = atBottom ? delta * 0.15
+                   : atTop   ? delta * 0.15
+                   : delta;
     setBottomDragDelta(bounded);
   }
   function onBottomDragEnd(e: React.PointerEvent) {
     if (!bottomDragStart.current) return;
     const delta = e.clientY - bottomDragStart.current.y;
-    const prev = bottomDragStart.current.snap;
+    const prev  = bottomDragStart.current.snap;
     setBottomDragDelta(0);
-
-    if (delta < -60)      setBottomSnap(prev === "peek" ? "mid" : "full");
-    else if (delta > 60)  setBottomSnap(prev === "full" ? "mid" : "peek");
-    // Senão mantém o snap atual
     bottomDragStart.current = null;
+
+    // Threshold: 50px OU velocidade (estimada pela distância) 
+    if (delta < -50)     setBottomSnap(prev === "peek" ? "mid" : "full");
+    else if (delta > 50) setBottomSnap(prev === "full" ? "mid" : "peek");
   }
 
   const bottomHeight = snapHeights[bottomSnap];
