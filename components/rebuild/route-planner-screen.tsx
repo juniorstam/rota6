@@ -1,11 +1,9 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowRight,
-  ChevronDown,
-  ChevronUp,
   CircleAlert,
   Flag,
   LoaderCircle,
@@ -119,9 +117,19 @@ export function RoutePlannerScreen() {
   const [pendingStop, setPendingStop] = useState<SearchSuggestion | null>(null);
   const [locatingOrigin, setLocatingOrigin] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [topCollapsed, setTopCollapsed] = useState(false);
-  const [bottomCollapsed, setBottomCollapsed] = useState(false);
   const [showNavModal, setShowNavModal] = useState(false);
+
+  // ── Drag do painel superior ──
+  // topOffset: deslocamento Y em px. Negativo = subiu (escondido). 0 = posição normal.
+  const [topOffset, setTopOffset] = useState(0);
+  const topDragStart = useRef<{ y: number; offset: number } | null>(null);
+  const topRef = useRef<HTMLDivElement>(null);
+
+  // ── Drag do painel inferior ──
+  // bottomSnap: "peek" (só handle visível) | "mid" (altura padrão) | "full" (expandido)
+  const [bottomSnap, setBottomSnap] = useState<"peek" | "mid" | "full">("mid");
+  const bottomDragStart = useRef<{ y: number; snap: "peek" | "mid" | "full" } | null>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
   function clearPreviewWithFeedback(message?: string) {
     setPreview(null);
@@ -384,6 +392,41 @@ export function RoutePlannerScreen() {
   const dotColor = (kind: "origin" | "stop" | "destination") =>
     kind === "origin" ? "#4ade80" : kind === "destination" ? "#fb7185" : "#fbbf24";
 
+  // ── Handlers drag painel superior ──
+  function onTopDragStart(e: React.PointerEvent) {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    topDragStart.current = { y: e.clientY, offset: topOffset };
+  }
+  function onTopDragMove(e: React.PointerEvent) {
+    if (!topDragStart.current) return;
+    const delta = e.clientY - topDragStart.current.y;
+    const panelH = topRef.current?.offsetHeight ?? 200;
+    const newOffset = Math.max(-panelH + 20, Math.min(0, topDragStart.current.offset + delta));
+    setTopOffset(newOffset);
+  }
+  function onTopDragEnd() {
+    if (!topDragStart.current) return;
+    const panelH = topRef.current?.offsetHeight ?? 200;
+    setTopOffset(topOffset < -(panelH * 0.4) ? -(panelH - 20) : 0);
+    topDragStart.current = null;
+  }
+
+  // ── Handlers drag painel inferior ──
+  function onBottomDragStart(e: React.PointerEvent) {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    bottomDragStart.current = { y: e.clientY, snap: bottomSnap };
+  }
+  function onBottomDragEnd(e: React.PointerEvent) {
+    if (!bottomDragStart.current) return;
+    const delta = e.clientY - bottomDragStart.current.y;
+    const prev = bottomDragStart.current.snap;
+    if (delta < -50) setBottomSnap(prev === "peek" ? "mid" : "full");
+    else if (delta > 50) setBottomSnap(prev === "full" ? "mid" : "peek");
+    bottomDragStart.current = null;
+  }
+
+  const bottomHeight = bottomSnap === "peek" ? "60px" : bottomSnap === "full" ? "85dvh" : "auto";
+
   return (
     <div className="fixed inset-0 z-[60] flex flex-col">
 
@@ -396,179 +439,152 @@ export function RoutePlannerScreen() {
         />
       </div>
 
-      {/* ── TOP PANEL — fixo no topo ── */}
-      <div className="pointer-events-auto relative z-20 w-full p-3 pb-0 md:p-4 md:pb-0">
+      {/* ── TOP PANEL — arrastável ── */}
+      <div
+        ref={topRef}
+        className="pointer-events-auto absolute top-0 left-0 right-0 z-20 p-3 pb-0 md:p-4 md:pb-0"
+        style={{
+          transform: `translateY(${topOffset}px)`,
+          transition: topDragStart.current ? "none" : "transform 0.3s cubic-bezier(0.4,0,0.2,1)"
+        }}
+      >
         <div className="overflow-visible rounded-[22px] border border-white/15 bg-black/80 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-xl">
 
-            {/* Handle retrátil */}
-            <button
-              type="button"
-              onClick={() => setTopCollapsed((v) => !v)}
-              className="flex w-full items-center justify-between px-4 py-2.5 text-white/50 transition hover:text-white/80"
-            >
-              <span className="text-[11px] font-semibold uppercase tracking-[0.15em]">
-                {topCollapsed
-                  ? (origin && destination ? `${origin.name} → ${destination.name}` : "Planejar rota")
-                  : "Rota"}
-              </span>
-              {topCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
-            </button>
+          {/* Handle de drag — parte de baixo do painel */}
+          <div
+            className="flex w-full cursor-grab touch-none items-center justify-center py-1.5 active:cursor-grabbing"
+            onPointerDown={onTopDragStart}
+            onPointerMove={onTopDragMove}
+            onPointerUp={onTopDragEnd}
+            onPointerCancel={onTopDragEnd}
+          >
+            <div className="h-1 w-10 rounded-full bg-white/25" />
+          </div>
 
-            {!topCollapsed && (
-            <div className="px-4 pt-0 pb-3">
+          <div className="px-4 pb-3">
 
-              {/* ORIGIN row */}
-              <div className="flex items-start gap-3">
-                <div className="flex shrink-0 flex-col items-center">
-                  <div className="mt-[18px] flex h-5 w-5 items-center justify-center rounded-full bg-[#4ade80] shadow-[0_0_8px_rgba(74,222,128,0.5)]">
-                    <div className="h-2 w-2 rounded-full bg-white" />
-                  </div>
-                  <div className="mt-1.5 border-l-2 border-dashed border-white/25" style={{ height: stops.length > 0 ? 28 : 20 }} />
+            {/* ORIGIN row */}
+            <div className="flex items-start gap-3">
+              <div className="flex shrink-0 flex-col items-center">
+                <div className="mt-[18px] flex h-5 w-5 items-center justify-center rounded-full bg-[#4ade80] shadow-[0_0_8px_rgba(74,222,128,0.5)]">
+                  <div className="h-2 w-2 rounded-full bg-white" />
                 </div>
-                <div className="flex min-w-0 flex-1 items-center gap-2">
-                  <div className="min-w-0 flex-1">
-                    <LocationSearchField
-                      label="Origem"
-                      value={origin}
-                      onSelect={handleOriginSelect}
-                      placeholder="De onde você sai?"
-                      compact
-                      proximity={userLocation}
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={fillOriginWithCurrentLocation}
-                    aria-label="Usar minha localização"
-                    className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition active:bg-white/20"
-                  >
-                    {locatingOrigin
-                      ? <LoaderCircle size={18} className="animate-spin" />
-                      : <LocateFixed size={18} />}
-                  </button>
-                </div>
+                <div className="mt-1.5 border-l-2 border-dashed border-white/25" style={{ height: stops.length > 0 ? 28 : 20 }} />
               </div>
-
-              {/* STOPS */}
-              {stops.map((stop, index) => (
-                <div key={`${stop.id ?? "new"}-${index}`} className="flex items-start gap-3">
-                  <div className="flex shrink-0 flex-col items-center">
-                    <div className="mt-[18px] h-4 w-4 shrink-0 rounded-full border-2 border-white/80 bg-[#fbbf24] shadow-[0_0_6px_rgba(251,191,36,0.5)]" />
-                    <div className="mt-1.5 border-l-2 border-dashed border-white/25" style={{ height: 20 }} />
-                  </div>
-                  <div className="flex min-w-0 flex-1 items-center gap-2">
-                    <div className="flex h-[52px] min-w-0 flex-1 items-center rounded-[16px] border border-white/20 bg-white/10 px-4">
-                      <p className="truncate text-[16px] font-medium text-white">
-                        {stop.suggestion?.name ?? "Parada " + (index + 1)}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveStop(index)}
-                      aria-label="Remover parada"
-                      className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white/70 transition active:bg-white/20"
-                    >
-                      <X size={18} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-
-              {/* DESTINATION row */}
-              <div className="flex items-start gap-3">
-                <div className="flex shrink-0 flex-col items-center">
-                  <div className="mt-[18px] flex h-5 w-5 shrink-0 items-center justify-center">
-                    <Flag size={18} className="text-[#fb7185] drop-shadow-[0_0_6px_rgba(251,113,133,0.6)]" />
-                  </div>
-                </div>
+              <div className="flex min-w-0 flex-1 items-center gap-2">
                 <div className="min-w-0 flex-1">
                   <LocationSearchField
-                    label="Destino"
-                    value={destination}
-                    onSelect={handleDestinationSelect}
-                    placeholder="Para onde você vai?"
+                    label="Origem"
+                    value={origin}
+                    onSelect={handleOriginSelect}
+                    placeholder="De onde você sai?"
                     compact
                     proximity={userLocation}
                   />
                 </div>
-              </div>
-            </div>
-            )}
-
-            {/* Swap + invert */}
-            {!topCollapsed && (origin || destination) ? (
-              <div className="flex items-center justify-end border-t border-white/10 px-4 py-2">
                 <button
                   type="button"
-                  onClick={swapOriginAndDestination}
-                  className="text-[12px] font-semibold text-white/50 transition hover:text-white/80"
+                  onClick={fillOriginWithCurrentLocation}
+                  aria-label="Usar minha localização"
+                  className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition active:bg-white/20"
                 >
-                  {"⇅"} inverter origem e destino
+                  {locatingOrigin
+                    ? <LoaderCircle size={18} className="animate-spin" />
+                    : <LocateFixed size={18} />}
                 </button>
               </div>
-            ) : null}
+            </div>
+
+            {/* STOPS */}
+            {stops.map((stop, index) => (
+              <div key={`${stop.id ?? "new"}-${index}`} className="flex items-start gap-3">
+                <div className="flex shrink-0 flex-col items-center">
+                  <div className="mt-[18px] h-4 w-4 shrink-0 rounded-full border-2 border-white/80 bg-[#fbbf24] shadow-[0_0_6px_rgba(251,191,36,0.5)]" />
+                  <div className="mt-1.5 border-l-2 border-dashed border-white/25" style={{ height: 20 }} />
+                </div>
+                <div className="flex min-w-0 flex-1 items-center gap-2">
+                  <div className="flex h-[52px] min-w-0 flex-1 items-center rounded-[16px] border border-white/20 bg-white/10 px-4">
+                    <p className="truncate text-[16px] font-medium text-white">
+                      {stop.suggestion?.name ?? "Parada " + (index + 1)}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveStop(index)}
+                    aria-label="Remover parada"
+                    className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white/70 transition active:bg-white/20"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              </div>
+            ))}
+
+            {/* DESTINATION row */}
+            <div className="flex items-start gap-3">
+              <div className="flex shrink-0 flex-col items-center">
+                <div className="mt-[18px] flex h-5 w-5 shrink-0 items-center justify-center">
+                  <Flag size={18} className="text-[#fb7185] drop-shadow-[0_0_6px_rgba(251,113,133,0.6)]" />
+                </div>
+              </div>
+              <div className="min-w-0 flex-1">
+                <LocationSearchField
+                  label="Destino"
+                  value={destination}
+                  onSelect={handleDestinationSelect}
+                  placeholder="Para onde você vai?"
+                  compact
+                  proximity={userLocation}
+                />
+              </div>
+            </div>
           </div>
+
+          {/* Swap */}
+          {(origin || destination) ? (
+            <div className="flex items-center justify-end border-t border-white/10 px-4 py-2">
+              <button
+                type="button"
+                onClick={swapOriginAndDestination}
+                className="text-[12px] font-semibold text-white/50 transition hover:text-white/80"
+              >
+                {"⇅"} inverter origem e destino
+              </button>
+            </div>
+          ) : null}
+        </div>
+      </div>
+      {/* ── BOTTOM SHEET — arrastável, fixo na base ── */}
+      <div
+        ref={bottomRef}
+        className="pointer-events-auto absolute bottom-0 left-0 right-0 z-20 flex flex-col rounded-t-[24px] border-t border-white/15 bg-black/85 pb-24 shadow-[0_-8px_32px_rgba(0,0,0,0.5)] backdrop-blur-xl md:pb-6"
+        style={{
+          height: bottomHeight,
+          maxHeight: "85dvh",
+          overflow: "hidden",
+          transition: bottomDragStart.current ? "none" : "height 0.35s cubic-bezier(0.4,0,0.2,1)"
+        }}
+      >
+        {/* Handle de drag — única área que inicia o drag */}
+        <div
+          className="flex w-full shrink-0 cursor-grab touch-none flex-col items-center gap-1 px-4 pt-3 pb-2 active:cursor-grabbing"
+          onPointerDown={onBottomDragStart}
+          onPointerMove={(e) => { if (bottomDragStart.current) e.preventDefault(); }}
+          onPointerUp={onBottomDragEnd}
+          onPointerCancel={onBottomDragEnd}
+        >
+          <div className="h-1 w-10 rounded-full bg-white/30" />
+          {bottomSnap === "peek" && (
+            <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-white/40">
+              {preview
+                ? `${formatDistanceMask(preview.distanceKm)} · ${formatDuration(preview.durationMinutes)}`
+                : "Arraste para ver ações"}
+            </p>
+          )}
         </div>
 
-      {/* ── BOTTOM SHEET — fixo na base, arrastável ── */}
-      <div
-        className="pointer-events-auto absolute bottom-0 left-0 right-0 z-20 pb-24 md:pb-6"
-        style={{ touchAction: "none" }}
-      >
-        {/* Sugestões acima do painel */}
-        {routeSuggestions.length > 0 ? (
-          <div className="mx-3 mb-2 rounded-[18px] border border-white/10 bg-black/80 p-3 backdrop-blur-md md:mx-4">
-            <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/50">Sugestões na rota</p>
-            <div className="no-scrollbar flex gap-2 overflow-x-auto">
-              {routeSuggestions.map((place) => (
-                <article key={place.id} className="flex shrink-0 w-[160px] flex-col overflow-hidden rounded-[14px] border border-white/10 bg-white/10">
-                  <div className="relative h-[72px] w-full bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center">
-                    <span className="text-[11px] font-bold uppercase tracking-wide text-white/50">
-                      {ROUTE_SUGGESTION_CATEGORY_LABELS[place.category]}
-                    </span>
-                    <span className="absolute top-1.5 right-1.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                      {"★"} {place.averageRating.toFixed(1)}
-                    </span>
-                  </div>
-                  <div className="flex flex-1 flex-col gap-1 p-2.5">
-                    <p className="truncate text-[12px] font-semibold text-white">{place.name}</p>
-                    <p className="text-[10px] text-white/50">{place.city}</p>
-                    <button
-                      type="button"
-                      onClick={() => { setReviewTarget(place); setReviewRating(5); setReviewComment(""); setReviewTags([]); }}
-                      className="mt-1.5 h-6 w-full rounded-full bg-accent/80 text-[10px] font-semibold text-white"
-                    >
-                      + Parada
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-        ) : null}
-
-        {/* Painel principal */}
-        <div className="mx-3 rounded-[22px] border border-white/15 bg-black/80 shadow-[0_-8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl md:mx-4">
-
-          {/* Handle de arrastar */}
-          <button
-            type="button"
-            onClick={() => setBottomCollapsed((v) => !v)}
-            className="flex w-full flex-col items-center gap-1 px-4 pt-2.5 pb-1"
-          >
-            <div className="h-1 w-10 rounded-full bg-white/25" />
-            <div className="flex w-full items-center justify-between">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-white/50">
-                {preview
-                  ? `${formatDistanceMask(preview.distanceKm)} · ${formatDuration(preview.durationMinutes)}`
-                  : "Ações"}
-              </span>
-              {bottomCollapsed ? <ChevronUp size={16} className="text-white/50" /> : <ChevronDown size={16} className="text-white/50" />}
-            </div>
-          </button>
-
-          {!bottomCollapsed && (
-          <div className="px-4 pb-4 pt-1">
+        {/* Conteúdo rolável */}
+        <div className="flex-1 overflow-y-auto px-4 pb-4">
 
           {/* LEG SCROLL */}
           {preview && legPoints.length >= 2 ? (
@@ -577,21 +593,14 @@ export function RoutePlannerScreen() {
                 {legPoints.map((point, index) => (
                   <Fragment key={point.id}>
                     <div className="flex shrink-0 flex-col items-center gap-1.5 rounded-[14px] border border-white/15 bg-white/10 px-3 py-2">
-                      <div
-                        className="h-3 w-3 rounded-full border border-white/60"
-                        style={{ background: dotColor(point.kind) }}
-                      />
-                      <p className="max-w-[64px] truncate text-center text-[11px] font-semibold leading-tight text-white">
-                        {point.name}
-                      </p>
+                      <div className="h-3 w-3 rounded-full border border-white/60" style={{ background: dotColor(point.kind) }} />
+                      <p className="max-w-[64px] truncate text-center text-[11px] font-semibold leading-tight text-white">{point.name}</p>
                     </div>
                     {index < legPoints.length - 1 ? (
                       <div className="flex shrink-0 flex-col items-center gap-0.5">
                         <span className="text-[16px] leading-none text-white/30">{"→"}</span>
                         <span className="text-[9px] font-semibold text-white/40">
-                          {legDistances[index] != null
-                            ? legDistances[index].toLocaleString("pt-BR", { maximumFractionDigits: 0 }) + " km"
-                            : ""}
+                          {legDistances[index] != null ? legDistances[index].toLocaleString("pt-BR", { maximumFractionDigits: 0 }) + " km" : ""}
                         </span>
                       </div>
                     ) : null}
@@ -601,126 +610,108 @@ export function RoutePlannerScreen() {
             </div>
           ) : null}
 
-            {/* STATS */}
-            {preview ? (
-              <div className="mb-3 grid grid-cols-2 gap-2.5">
-                <div className="rounded-[16px] bg-white/10 px-4 py-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/55">Distância</p>
-                  <p className="mt-1 text-[20px] font-bold leading-tight text-white">
-                    {formatDistanceMask(preview.distanceKm)}
-                  </p>
-                </div>
-                <div className="rounded-[16px] bg-white/10 px-4 py-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/55">Tempo</p>
-                  <p className="mt-1 text-[20px] font-bold leading-tight text-white">
-                    {formatDuration(preview.durationMinutes)}
-                  </p>
-                </div>
+          {/* STATS */}
+          {preview ? (
+            <div className="mb-3 grid grid-cols-2 gap-2.5">
+              <div className="rounded-[16px] bg-white/10 px-4 py-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/55">Distância</p>
+                <p className="mt-1 text-[20px] font-bold leading-tight text-white">{formatDistanceMask(preview.distanceKm)}</p>
               </div>
-            ) : null}
+              <div className="rounded-[16px] bg-white/10 px-4 py-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/55">Tempo</p>
+                <p className="mt-1 text-[20px] font-bold leading-tight text-white">{formatDuration(preview.durationMinutes)}</p>
+              </div>
+            </div>
+          ) : null}
 
-            {/* ACTION BUTTONS */}
-            {!preview ? (
-              /* No route yet */
+          {/* ACTION BUTTONS */}
+          {!preview ? (
+            <div className="flex gap-2.5">
+              <button type="button" onClick={handleAddStop} className="flex h-10 flex-1 items-center justify-center gap-2 rounded-full border border-white/25 bg-white/10 text-[14px] font-semibold text-white transition active:bg-white/20">
+                <Plus size={15} />
+                <span className="truncate">Adicionar parada</span>
+              </button>
+              <button type="button" onClick={calculateRoute} disabled={!canCalculate || busyPreview} className="flex h-10 flex-1 items-center justify-center gap-2 rounded-full bg-accent text-[14px] font-bold text-white shadow-[0_4px_20px_rgba(47,128,237,0.45)] transition disabled:opacity-50 active:scale-[0.98]">
+                {busyPreview ? <LoaderCircle size={15} className="animate-spin" /> : <ArrowRight size={15} />}
+                <span className="truncate">{busyPreview ? "Calculando..." : "Calcular rota"}</span>
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2.5">
+              <button type="button" onClick={startNavigation} className="flex h-12 w-full items-center justify-center gap-2.5 rounded-full bg-[#16a34a] text-[15px] font-bold text-white shadow-[0_4px_20px_rgba(22,163,74,0.45)] transition active:scale-[0.98]">
+                <Navigation size={18} />
+                Iniciar navegação
+              </button>
               <div className="flex gap-2.5">
-                <button
-                  type="button"
-                  onClick={handleAddStop}
-                  className="flex h-10 flex-1 items-center justify-center gap-2 rounded-full border border-white/25 bg-white/10 text-[14px] font-semibold text-white transition active:bg-white/20"
-                >
+                <button type="button" onClick={handleAddStop} className="flex h-10 flex-1 items-center justify-center gap-2 rounded-full border border-white/25 bg-white/10 text-[14px] font-semibold text-white transition active:bg-white/20">
                   <Plus size={15} />
-                  <span className="truncate">Adicionar parada</span>
+                  <span className="truncate">+ Parada</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={calculateRoute}
-                  disabled={!canCalculate || busyPreview}
-                  className="flex h-10 flex-1 items-center justify-center gap-2 rounded-full bg-accent text-[14px] font-bold text-white shadow-[0_4px_20px_rgba(47,128,237,0.45)] transition disabled:opacity-50 active:scale-[0.98]"
-                >
-                  {busyPreview
-                    ? <LoaderCircle size={15} className="animate-spin" />
-                    : <ArrowRight size={15} />}
-                  <span className="truncate">{busyPreview ? "Calculando..." : "Calcular rota"}</span>
+                <button type="button" onClick={calculateRoute} disabled={busyPreview} className="flex h-10 flex-1 items-center justify-center gap-2 rounded-full border border-white/25 bg-white/10 text-[14px] font-semibold text-white transition disabled:opacity-50 active:bg-white/20">
+                  {busyPreview ? <LoaderCircle size={15} className="animate-spin" /> : <ArrowRight size={15} />}
+                  <span className="truncate">{busyPreview ? "Calculando..." : "Recalcular"}</span>
                 </button>
               </div>
-            ) : (
-              /* Route calculated */
-              <div className="flex flex-col gap-2.5">
-                {/* Iniciar navegação — destaque verde */}
-                <button
-                  type="button"
-                  onClick={startNavigation}
-                  className="flex h-12 w-full items-center justify-center gap-2.5 rounded-full bg-[#16a34a] text-[15px] font-bold text-white shadow-[0_4px_20px_rgba(22,163,74,0.45)] transition active:scale-[0.98]"
-                >
-                  <Navigation size={18} />
-                  Iniciar navegação
+              <div className="flex gap-2.5">
+                {user ? (
+                  <button type="button" onClick={saveRoute} disabled={!canSave || busySave} className="flex h-10 flex-1 items-center justify-center gap-2 rounded-full bg-accent text-[14px] font-bold text-white shadow-[0_4px_16px_rgba(47,128,237,0.4)] transition disabled:opacity-50 active:scale-[0.98]">
+                    <Save size={15} />
+                    <span className="truncate">{busySave ? "Salvando..." : routeId ? "Atualizar" : "Salvar"}</span>
+                  </button>
+                ) : (
+                  <button type="button" onClick={() => setShowLoginAlert(true)} className="flex h-10 flex-1 items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 text-[14px] font-semibold text-white/55 transition active:bg-white/20">
+                    <Lock size={15} />
+                    Salvar
+                  </button>
+                )}
+                <button type="button" onClick={resetPlanner} className="flex h-10 flex-1 items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 text-[14px] font-semibold text-white transition active:bg-white/20">
+                  <Trash2 size={15} />
+                  Limpar
                 </button>
-
-                {/* Adicionar parada + Recalcular */}
-                <div className="flex gap-2.5">
-                  <button
-                    type="button"
-                    onClick={handleAddStop}
-                    className="flex h-10 flex-1 items-center justify-center gap-2 rounded-full border border-white/25 bg-white/10 text-[14px] font-semibold text-white transition active:bg-white/20"
-                  >
-                    <Plus size={15} />
-                    <span className="truncate">+ Parada</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={calculateRoute}
-                    disabled={busyPreview}
-                    className="flex h-10 flex-1 items-center justify-center gap-2 rounded-full border border-white/25 bg-white/10 text-[14px] font-semibold text-white transition disabled:opacity-50 active:bg-white/20"
-                  >
-                    {busyPreview ? <LoaderCircle size={15} className="animate-spin" /> : <ArrowRight size={15} />}
-                    <span className="truncate">{busyPreview ? "Calculando..." : "Recalcular"}</span>
-                  </button>
-                </div>
-
-                {/* Salvar + Limpar */}
-                <div className="flex gap-2.5">
-                  {user ? (
-                    <button
-                      type="button"
-                      onClick={saveRoute}
-                      disabled={!canSave || busySave}
-                      className="flex h-10 flex-1 items-center justify-center gap-2 rounded-full bg-accent text-[14px] font-bold text-white shadow-[0_4px_16px_rgba(47,128,237,0.4)] transition disabled:opacity-50 active:scale-[0.98]"
-                    >
-                      <Save size={15} />
-                      <span className="truncate">{busySave ? "Salvando..." : routeId ? "Atualizar" : "Salvar"}</span>
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setShowLoginAlert(true)}
-                      className="flex h-10 flex-1 items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 text-[14px] font-semibold text-white/55 transition active:bg-white/20"
-                    >
-                      <Lock size={15} />
-                      Salvar
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={resetPlanner}
-                    className="flex h-10 flex-1 items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 text-[14px] font-semibold text-white transition active:bg-white/20"
-                  >
-                    <Trash2 size={15} />
-                    Limpar
-                  </button>
-                </div>
               </div>
-            )}
-
-            {/* FEEDBACK */}
-            {feedback ? (
-              <div className="mt-3 flex items-start gap-2.5 rounded-[14px] bg-white/8 px-3 py-3">
-                <CircleAlert size={15} className="mt-0.5 shrink-0 text-accentSoft" />
-                <p className="text-[13px] leading-5 text-white/85">{feedback}</p>
-              </div>
-            ) : null}
-
-          </div>
+            </div>
           )}
+
+          {/* FEEDBACK */}
+          {feedback ? (
+            <div className="mt-3 flex items-start gap-2.5 rounded-[14px] bg-white/8 px-3 py-3">
+              <CircleAlert size={15} className="mt-0.5 shrink-0 text-accentSoft" />
+              <p className="text-[13px] leading-5 text-white/85">{feedback}</p>
+            </div>
+          ) : null}
+
+          {/* SUGESTÕES DE PARADAS — aparecem ao expandir o painel */}
+          {routeSuggestions.length > 0 ? (
+            <div className="mt-4">
+              <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">Pontos ao longo da rota</p>
+              <div className="flex flex-col gap-2.5">
+                {routeSuggestions.map((place) => (
+                  <article key={place.id} className="flex items-center gap-3 overflow-hidden rounded-[16px] border border-white/10 bg-white/8 p-3">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px] bg-white/10 text-[22px]">
+                      {place.category === "viewpoint" ? ("🏔") : place.category === "restaurant" ? ("🍽") : place.category === "cafe" ? ("☕") : place.category === "fuel" ? ("⛽") : place.category === "hotel" ? ("🏨") : ("📍")}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[13px] font-semibold text-white">{place.name}</p>
+                      <p className="text-[11px] text-white/50">{ROUTE_SUGGESTION_CATEGORY_LABELS[place.category]} · {place.city}, {place.state}</p>
+                      <div className="mt-0.5 flex items-center gap-1">
+                        <span className="text-[11px] text-yellow-400">{"★"} {place.averageRating.toFixed(1)}</span>
+                        <span className="text-[10px] text-white/30">·</span>
+                        <span className="text-[10px] text-white/40">{place.detourKm > 0 ? `${place.detourKm} km do trajeto` : "Na rota"}</span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { setReviewTarget(place); setReviewRating(5); setReviewComment(""); setReviewTags([]); }}
+                      className="shrink-0 rounded-full bg-accent/20 px-3 py-1.5 text-[11px] font-semibold text-accentSoft"
+                    >
+                      Avaliar
+                    </button>
+                  </article>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
         </div>
       </div>
 
