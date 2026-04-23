@@ -387,7 +387,7 @@ export function RoutePlannerScreen() {
   return (
     <div className="fixed inset-0 z-[60] flex flex-col">
 
-      {/* ── MAP AREA — ocupa todo o espaço restante atrás dos controles ── */}
+      {/* ── MAP AREA ── */}
       <div className="absolute inset-0">
         <RouteMapCard
           preview={preview}
@@ -396,12 +396,9 @@ export function RoutePlannerScreen() {
         />
       </div>
 
-      {/* ── CONTROLS AREA — sobrepostos ao mapa ── */}
-      <div className="pointer-events-none relative z-10 flex h-full flex-col justify-between p-3 pb-28 md:p-4 md:pb-6">
-
-        {/* TOP PANEL */}
-        <div className="pointer-events-auto w-full">
-          <div className="overflow-hidden rounded-[22px] border border-white/15 bg-black/80 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+      {/* ── TOP PANEL — fixo no topo ── */}
+      <div className="pointer-events-auto relative z-20 w-full p-3 pb-0 md:p-4 md:pb-0">
+        <div className="overflow-hidden rounded-[22px] border border-white/15 bg-black/80 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-xl">
 
             {/* Handle retrátil */}
             <button
@@ -512,92 +509,98 @@ export function RoutePlannerScreen() {
             ) : null}
           </div>
         </div>
+      </div>
 
-        {/* SUGGESTIONS */}
-        <div className="pointer-events-auto w-full">
-          {routeSuggestions.length > 0 ? (
-            <div className="pointer-events-auto w-full rounded-[18px] border border-white/10 bg-black/70 p-3 backdrop-blur-md">
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/50">Sugestões na rota</p>
-              <div className="no-scrollbar flex gap-2 overflow-x-auto">
-                {routeSuggestions.map((place) => (
-                  <article key={place.id} className="flex shrink-0 w-[160px] flex-col overflow-hidden rounded-[14px] border border-white/10 bg-white/10">
-                    <div className="relative h-[72px] w-full bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center">
-                      <span className="text-[11px] font-bold uppercase tracking-wide text-white/50">
-                        {ROUTE_SUGGESTION_CATEGORY_LABELS[place.category]}
-                      </span>
-                      <span className="absolute top-1.5 right-1.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                        {"★"} {place.averageRating.toFixed(1)}
-                      </span>
-                    </div>
-                    <div className="flex flex-1 flex-col gap-1 p-2.5">
-                      <p className="truncate text-[12px] font-semibold text-white">{place.name}</p>
-                      <p className="text-[10px] text-white/50">{place.city}</p>
-                      <button
-                        type="button"
-                        onClick={() => { setReviewTarget(place); setReviewRating(5); setReviewComment(""); setReviewTags([]); }}
-                        className="mt-1.5 h-6 w-full rounded-full bg-accent/80 text-[10px] font-semibold text-white"
-                      >
-                        + Parada
-                      </button>
-                    </div>
-                  </article>
-                ))}
-              </div>
+      {/* ── BOTTOM SHEET — fixo na base, arrastável ── */}
+      <div
+        className="pointer-events-auto absolute bottom-0 left-0 right-0 z-20 pb-24 md:pb-6"
+        style={{ touchAction: "none" }}
+      >
+        {/* Sugestões acima do painel */}
+        {routeSuggestions.length > 0 ? (
+          <div className="mx-3 mb-2 rounded-[18px] border border-white/10 bg-black/80 p-3 backdrop-blur-md md:mx-4">
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/50">Sugestões na rota</p>
+            <div className="no-scrollbar flex gap-2 overflow-x-auto">
+              {routeSuggestions.map((place) => (
+                <article key={place.id} className="flex shrink-0 w-[160px] flex-col overflow-hidden rounded-[14px] border border-white/10 bg-white/10">
+                  <div className="relative h-[72px] w-full bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center">
+                    <span className="text-[11px] font-bold uppercase tracking-wide text-white/50">
+                      {ROUTE_SUGGESTION_CATEGORY_LABELS[place.category]}
+                    </span>
+                    <span className="absolute top-1.5 right-1.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                      {"★"} {place.averageRating.toFixed(1)}
+                    </span>
+                  </div>
+                  <div className="flex flex-1 flex-col gap-1 p-2.5">
+                    <p className="truncate text-[12px] font-semibold text-white">{place.name}</p>
+                    <p className="text-[10px] text-white/50">{place.city}</p>
+                    <button
+                      type="button"
+                      onClick={() => { setReviewTarget(place); setReviewRating(5); setReviewComment(""); setReviewTags([]); }}
+                      className="mt-1.5 h-6 w-full rounded-full bg-accent/80 text-[10px] font-semibold text-white"
+                    >
+                      + Parada
+                    </button>
+                  </div>
+                </article>
+              ))}
             </div>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
 
-        {/* BOTTOM PANEL */}
-        <div className="pointer-events-auto w-full">
-          <div className="rounded-[22px] border border-white/15 bg-black/80 shadow-[0_-8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl">
+        {/* Painel principal */}
+        <div className="mx-3 rounded-[22px] border border-white/15 bg-black/80 shadow-[0_-8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl md:mx-4">
 
-            {/* Handle retrátil */}
-            <button
-              type="button"
-              onClick={() => setBottomCollapsed((v) => !v)}
-              className="flex w-full items-center justify-between px-4 py-2.5 text-white/50 transition hover:text-white/80"
-            >
-              <span className="text-[11px] font-semibold uppercase tracking-[0.15em]">
+          {/* Handle de arrastar */}
+          <button
+            type="button"
+            onClick={() => setBottomCollapsed((v) => !v)}
+            className="flex w-full flex-col items-center gap-1 px-4 pt-2.5 pb-1"
+          >
+            <div className="h-1 w-10 rounded-full bg-white/25" />
+            <div className="flex w-full items-center justify-between">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-white/50">
                 {preview
                   ? `${formatDistanceMask(preview.distanceKm)} · ${formatDuration(preview.durationMinutes)}`
                   : "Ações"}
               </span>
-              {bottomCollapsed ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            </button>
+              {bottomCollapsed ? <ChevronUp size={16} className="text-white/50" /> : <ChevronDown size={16} className="text-white/50" />}
+            </div>
+          </button>
 
-            {!bottomCollapsed && (
-            <div className="px-4 pb-4">
+          {!bottomCollapsed && (
+          <div className="px-4 pb-4 pt-1">
 
-            {/* LEG SCROLL */}
-            {preview && legPoints.length >= 2 ? (
-              <div className="mb-3">
-                <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto pb-1">
-                  {legPoints.map((point, index) => (
-                    <Fragment key={point.id}>
-                      <div className="flex shrink-0 flex-col items-center gap-1.5 rounded-[14px] border border-white/15 bg-white/10 px-3 py-2">
-                        <div
-                          className="h-3 w-3 rounded-full border border-white/60"
-                          style={{ background: dotColor(point.kind) }}
-                        />
-                        <p className="max-w-[64px] truncate text-center text-[11px] font-semibold leading-tight text-white">
-                          {point.name}
-                        </p>
+          {/* LEG SCROLL */}
+          {preview && legPoints.length >= 2 ? (
+            <div className="mb-3">
+              <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto pb-1">
+                {legPoints.map((point, index) => (
+                  <Fragment key={point.id}>
+                    <div className="flex shrink-0 flex-col items-center gap-1.5 rounded-[14px] border border-white/15 bg-white/10 px-3 py-2">
+                      <div
+                        className="h-3 w-3 rounded-full border border-white/60"
+                        style={{ background: dotColor(point.kind) }}
+                      />
+                      <p className="max-w-[64px] truncate text-center text-[11px] font-semibold leading-tight text-white">
+                        {point.name}
+                      </p>
+                    </div>
+                    {index < legPoints.length - 1 ? (
+                      <div className="flex shrink-0 flex-col items-center gap-0.5">
+                        <span className="text-[16px] leading-none text-white/30">{"→"}</span>
+                        <span className="text-[9px] font-semibold text-white/40">
+                          {legDistances[index] != null
+                            ? legDistances[index].toLocaleString("pt-BR", { maximumFractionDigits: 0 }) + " km"
+                            : ""}
+                        </span>
                       </div>
-                      {index < legPoints.length - 1 ? (
-                        <div className="flex shrink-0 flex-col items-center gap-0.5">
-                          <span className="text-[16px] leading-none text-white/30">{"→"}</span>
-                          <span className="text-[9px] font-semibold text-white/40">
-                            {legDistances[index] != null
-                              ? legDistances[index].toLocaleString("pt-BR", { maximumFractionDigits: 0 }) + " km"
-                              : ""}
-                          </span>
-                        </div>
-                      ) : null}
-                    </Fragment>
-                  ))}
-                </div>
+                    ) : null}
+                  </Fragment>
+                ))}
               </div>
-            ) : null}
+            </div>
+          ) : null}
 
             {/* STATS */}
             {preview ? (
@@ -696,11 +699,9 @@ export function RoutePlannerScreen() {
               </div>
             ) : null}
 
-            </div>
-            )}
           </div>
+          )}
         </div>
-
       </div>
 
       {/* ── MODAL: Escolha do app de navegação ── */}
