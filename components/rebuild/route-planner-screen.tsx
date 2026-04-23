@@ -2,7 +2,20 @@
 
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CircleAlert, Flag, LoaderCircle, LocateFixed, Map, Plus, Save, Trash2, X } from "lucide-react";
+import {
+  ArrowRight,
+  CircleAlert,
+  Flag,
+  LoaderCircle,
+  Lock,
+  LocateFixed,
+  Map,
+  Navigation,
+  Plus,
+  Save,
+  Trash2,
+  X
+} from "lucide-react";
 
 import { LocationSearchField } from "@/components/rebuild/location-search-field";
 import { RouteMapCard } from "@/components/rebuild/route-map-card";
@@ -269,7 +282,10 @@ export function RoutePlannerScreen() {
     setBusySave(true);
     setFeedback(null);
     try {
-      const res = await authFetch(routeId ? `/api/routes/${routeId}` : "/api/routes", { method: routeId ? "PATCH" : "POST", body: JSON.stringify(payload) });
+      const res = await authFetch(routeId ? `/api/routes/${routeId}` : "/api/routes", {
+        method: routeId ? "PATCH" : "POST",
+        body: JSON.stringify(payload)
+      });
       const result = (await res.json()) as RouteRecord | { message?: string };
       if (!res.ok) throw new Error("message" in result ? result.message : "Não foi possível salvar a rota.");
       const saved = result as RouteRecord;
@@ -317,7 +333,17 @@ export function RoutePlannerScreen() {
     if (routeId) router.replace("/planejar");
   }
 
-  /* ───── waypoints for leg scroll ───── */
+  function startNavigation() {
+    if (!origin || !destination) return;
+    const parts = [
+      `${origin.lat},${origin.lng}`,
+      ...stops.flatMap((s) => (s.suggestion ? [`${s.suggestion.lat},${s.suggestion.lng}`] : [])),
+      `${destination.lat},${destination.lng}`
+    ];
+    window.open(`https://www.google.com/maps/dir/${parts.join("/")}`, "_blank");
+  }
+
+  /* ── waypoints for leg scroll ── */
   const legPoints = useMemo(() => {
     const points: { id: string; name: string; kind: "origin" | "stop" | "destination" }[] = [];
     if (origin) points.push({ id: origin.id, name: origin.name, kind: "origin" });
@@ -330,13 +356,23 @@ export function RoutePlannerScreen() {
     kind === "origin" ? "#4ade80" : kind === "destination" ? "#fb7185" : "#fbbf24";
 
   return (
-    /* fullscreen container — covers header and mobile nav */
-    <div className="fixed inset-0 z-[60] overflow-hidden">
-      <RouteMapCard preview={preview} hasRoutePoints={routePoints > 1} waypoints={waypointMarkers}>
+    <div className="fixed inset-0 z-[60] planner-root">
 
-        {/* ── TOP PANEL ── */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-30 p-3 pb-1">
-          <div className="pointer-events-auto overflow-visible rounded-[22px] border border-white/15 bg-black/80 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+      {/* ── MAP AREA ── */}
+      <div className="planner-map-area">
+        <RouteMapCard
+          preview={preview}
+          hasRoutePoints={routePoints > 1}
+          waypoints={waypointMarkers}
+        />
+      </div>
+
+      {/* ── CONTROLS AREA ── */}
+      <div className="planner-controls-area">
+
+        {/* TOP PANEL */}
+        <div className="planner-section-top">
+          <div className="overflow-visible rounded-[22px] border border-white/15 bg-black/80 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-xl">
             <div className="px-4 pt-4 pb-3">
 
               {/* ORIGIN row */}
@@ -362,7 +398,7 @@ export function RoutePlannerScreen() {
                     type="button"
                     onClick={fillOriginWithCurrentLocation}
                     aria-label="Usar minha localização"
-                    className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[16px] border border-white/20 bg-white/10 text-white transition active:bg-white/20"
+                    className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition active:bg-white/20"
                   >
                     {locatingOrigin
                       ? <LoaderCircle size={18} className="animate-spin" />
@@ -388,30 +424,13 @@ export function RoutePlannerScreen() {
                       type="button"
                       onClick={() => handleRemoveStop(index)}
                       aria-label="Remover parada"
-                      className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[16px] border border-white/20 bg-white/10 text-white/70 transition active:bg-white/20"
+                      className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white/70 transition active:bg-white/20"
                     >
                       <X size={18} />
                     </button>
                   </div>
                 </div>
               ))}
-
-              {/* ADD STOP button */}
-              <div className="flex items-center gap-3 py-2">
-                <div className="flex w-5 justify-center">
-                  <div className="h-px w-px" />
-                </div>
-                <button
-                  type="button"
-                  onClick={handleAddStop}
-                  className="flex items-center gap-2 text-[13px] text-white/50 transition hover:text-white/80 active:text-white"
-                >
-                  <div className="flex h-5 w-5 items-center justify-center rounded-full border border-white/30 bg-white/10">
-                    <Plus size={11} />
-                  </div>
-                  Adicionar parada
-                </button>
-              </div>
 
               {/* DESTINATION row */}
               <div className="flex items-start gap-3">
@@ -439,7 +458,7 @@ export function RoutePlannerScreen() {
                 <button
                   type="button"
                   onClick={swapOriginAndDestination}
-                  className="text-[12px] font-medium text-white/50 transition hover:text-white/80"
+                  className="text-[12px] font-semibold text-white/50 transition hover:text-white/80"
                 >
                   ⇅ inverter origem e destino
                 </button>
@@ -448,27 +467,56 @@ export function RoutePlannerScreen() {
           </div>
         </div>
 
-        {/* ── BOTTOM PANEL ── */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 p-3 pt-1 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <div className="pointer-events-auto rounded-[22px] border border-white/15 bg-black/80 p-4 shadow-[0_-8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl">
+        {/* SUGGESTIONS (middle gap — appears just above bottom panel) */}
+        <div className="planner-suggestions">
+          {routeSuggestions.length > 0 ? (
+            <div className="pointer-events-auto w-full rounded-[18px] border border-white/10 bg-black/70 p-3 backdrop-blur-md">
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/50">Sugestões na rota</p>
+              <div className="no-scrollbar flex gap-2 overflow-x-auto">
+                {routeSuggestions.map((place) => (
+                  <article key={place.id} className="flex shrink-0 w-[150px] flex-col gap-1 rounded-[14px] border border-white/10 bg-white/10 p-2.5">
+                    <div className="flex items-start justify-between gap-1">
+                      <p className="min-w-0 truncate text-[13px] font-semibold text-white">{place.name}</p>
+                      <span className="shrink-0 rounded-full bg-accent/20 px-1.5 py-0.5 text-[10px] font-bold text-accentSoft">
+                        {place.averageRating.toFixed(1)}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-white/50">{ROUTE_SUGGESTION_CATEGORY_LABELS[place.category]}</p>
+                    <button
+                      type="button"
+                      onClick={() => { setReviewTarget(place); setReviewRating(5); setReviewComment(""); setReviewTags([]); }}
+                      className="mt-1 h-7 w-full rounded-full bg-accent text-[11px] font-semibold text-white"
+                    >
+                      Avaliar
+                    </button>
+                  </article>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
 
-            {/* LEG SCROLL — shown when preview exists and has multiple points */}
+        {/* BOTTOM PANEL */}
+        <div className="planner-section-bottom">
+          <div className="rounded-[22px] border border-white/15 bg-black/80 p-4 shadow-[0_-8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl">
+
+            {/* LEG SCROLL */}
             {preview && legPoints.length >= 2 ? (
-              <div className="mb-4">
+              <div className="mb-3">
                 <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto pb-1">
                   {legPoints.map((point, index) => (
                     <Fragment key={point.id}>
-                      <div className="flex shrink-0 flex-col items-center gap-1.5 rounded-[14px] border border-white/15 bg-white/10 px-3 py-2.5">
+                      <div className="flex shrink-0 flex-col items-center gap-1.5 rounded-[14px] border border-white/15 bg-white/10 px-3 py-2">
                         <div
                           className="h-3 w-3 rounded-full border border-white/60"
                           style={{ background: dotColor(point.kind) }}
                         />
-                        <p className="max-w-[72px] truncate text-center text-[12px] font-semibold leading-tight text-white">
+                        <p className="max-w-[64px] truncate text-center text-[11px] font-semibold leading-tight text-white">
                           {point.name}
                         </p>
                       </div>
                       {index < legPoints.length - 1 ? (
-                        <span className="shrink-0 text-[18px] leading-none text-white/30">→</span>
+                        <span className="shrink-0 text-[16px] leading-none text-white/30">→</span>
                       ) : null}
                     </Fragment>
                   ))}
@@ -476,18 +524,18 @@ export function RoutePlannerScreen() {
               </div>
             ) : null}
 
-            {/* STATS — shown when preview exists */}
+            {/* STATS */}
             {preview ? (
-              <div className="mb-4 grid grid-cols-2 gap-3">
+              <div className="mb-3 grid grid-cols-2 gap-2.5">
                 <div className="rounded-[16px] bg-white/10 px-4 py-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">Distância</p>
-                  <p className="mt-1 text-[22px] font-bold leading-tight text-white">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/55">Distância</p>
+                  <p className="mt-1 text-[20px] font-bold leading-tight text-white">
                     {preview.distanceKm ? `${preview.distanceKm} km` : "—"}
                   </p>
                 </div>
                 <div className="rounded-[16px] bg-white/10 px-4 py-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">Tempo</p>
-                  <p className="mt-1 text-[22px] font-bold leading-tight text-white">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/55">Tempo</p>
+                  <p className="mt-1 text-[20px] font-bold leading-tight text-white">
                     {formatDuration(preview.durationMinutes)}
                   </p>
                 </div>
@@ -496,93 +544,94 @@ export function RoutePlannerScreen() {
 
             {/* ACTION BUTTONS */}
             {!preview ? (
-              <div className="grid grid-cols-2 gap-3">
+              /* No route yet */
+              <div className="flex gap-2.5">
                 <button
                   type="button"
                   onClick={handleAddStop}
-                  className="flex h-14 items-center justify-center gap-2 rounded-[16px] border border-white/20 bg-white/10 text-[15px] font-semibold text-white transition active:bg-white/20"
+                  className="flex h-10 flex-1 items-center justify-center gap-2 rounded-full border border-white/25 bg-white/10 text-[14px] font-semibold text-white transition active:bg-white/20"
                 >
-                  <Plus size={18} />
-                  Parada
+                  <Plus size={15} />
+                  <span className="truncate">Adicionar parada</span>
                 </button>
                 <button
                   type="button"
                   onClick={calculateRoute}
                   disabled={!canCalculate || busyPreview}
-                  className="flex h-14 items-center justify-center rounded-[16px] bg-accent text-[15px] font-bold text-white shadow-[0_8px_24px_rgba(47,128,237,0.45)] transition disabled:opacity-50 active:scale-[0.98]"
+                  className="flex h-10 flex-1 items-center justify-center gap-2 rounded-full bg-accent text-[14px] font-bold text-white shadow-[0_4px_20px_rgba(47,128,237,0.45)] transition disabled:opacity-50 active:scale-[0.98]"
                 >
-                  {busyPreview ? "Calculando..." : "Calcular rota"}
+                  {busyPreview
+                    ? <LoaderCircle size={15} className="animate-spin" />
+                    : <ArrowRight size={15} />}
+                  <span className="truncate">{busyPreview ? "Calculando..." : "Calcular rota"}</span>
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-3">
+              /* Route calculated */
+              <div className="flex flex-col gap-2.5">
+                {/* Iniciar navegação — destaque verde */}
                 <button
                   type="button"
-                  onClick={saveRoute}
-                  disabled={!canSave || busySave}
-                  className="flex h-14 items-center justify-center gap-2 rounded-[16px] bg-accent text-[15px] font-bold text-white shadow-[0_8px_24px_rgba(47,128,237,0.45)] transition disabled:opacity-50 active:scale-[0.98]"
+                  onClick={startNavigation}
+                  className="flex h-12 w-full items-center justify-center gap-2.5 rounded-full bg-[#16a34a] text-[15px] font-bold text-white shadow-[0_4px_20px_rgba(22,163,74,0.45)] transition active:scale-[0.98]"
                 >
-                  <Save size={18} />
-                  {busySave ? "Salvando..." : routeId ? "Atualizar" : "Salvar rota"}
+                  <Navigation size={18} />
+                  Iniciar navegação
                 </button>
-                <button
-                  type="button"
-                  onClick={resetPlanner}
-                  className="flex h-14 items-center justify-center gap-2 rounded-[16px] border border-white/20 bg-white/10 text-[15px] font-semibold text-white transition active:bg-white/20"
-                >
-                  <Trash2 size={18} />
-                  Limpar
-                </button>
+
+                {/* Salvar + Limpar */}
+                <div className="flex gap-2.5">
+                  {user ? (
+                    <button
+                      type="button"
+                      onClick={saveRoute}
+                      disabled={!canSave || busySave}
+                      className="flex h-10 flex-1 items-center justify-center gap-2 rounded-full bg-accent text-[14px] font-bold text-white shadow-[0_4px_16px_rgba(47,128,237,0.4)] transition disabled:opacity-50 active:scale-[0.98]"
+                    >
+                      <Save size={15} />
+                      <span className="truncate">{busySave ? "Salvando..." : routeId ? "Atualizar" : "Salvar"}</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setShowLoginAlert(true)}
+                      className="flex h-10 flex-1 items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 text-[14px] font-semibold text-white/55 transition active:bg-white/20"
+                    >
+                      <Lock size={15} />
+                      Salvar
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={resetPlanner}
+                    className="flex h-10 flex-1 items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 text-[14px] font-semibold text-white transition active:bg-white/20"
+                  >
+                    <Trash2 size={15} />
+                    Limpar
+                  </button>
+                </div>
               </div>
             )}
 
             {/* FEEDBACK */}
             {feedback ? (
               <div className="mt-3 flex items-start gap-2.5 rounded-[14px] bg-white/8 px-3 py-3">
-                <CircleAlert size={16} className="mt-0.5 shrink-0 text-accentSoft" />
-                <p className="text-[14px] leading-5 text-white/85">{feedback}</p>
+                <CircleAlert size={15} className="mt-0.5 shrink-0 text-accentSoft" />
+                <p className="text-[13px] leading-5 text-white/85">{feedback}</p>
               </div>
             ) : null}
           </div>
         </div>
 
-      </RouteMapCard>
-
-      {/* ── ROUTE SUGGESTIONS (floating, scrollable) ── */}
-      {routeSuggestions.length > 0 ? (
-        <div className="pointer-events-none absolute inset-x-0 bottom-[calc(180px+env(safe-area-inset-bottom,0px))] z-20 px-3">
-          <div className="pointer-events-auto rounded-[18px] border border-white/10 bg-black/70 p-3 backdrop-blur-md">
-            <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/50">Sugestões na rota</p>
-            <div className="no-scrollbar flex gap-2 overflow-x-auto">
-              {routeSuggestions.map((place) => (
-                <article key={place.id} className="flex shrink-0 w-[160px] flex-col gap-1 rounded-[14px] border border-white/10 bg-white/10 p-2.5">
-                  <div className="flex items-start justify-between gap-1">
-                    <p className="min-w-0 truncate text-[13px] font-semibold text-white">{place.name}</p>
-                    <span className="shrink-0 rounded-full bg-accent/20 px-1.5 py-0.5 text-[10px] font-bold text-accentSoft">
-                      {place.averageRating.toFixed(1)}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-white/50">{ROUTE_SUGGESTION_CATEGORY_LABELS[place.category]}</p>
-                  <button
-                    type="button"
-                    onClick={() => { setReviewTarget(place); setReviewRating(5); setReviewComment(""); setReviewTags([]); }}
-                    className="mt-1 h-7 w-full rounded-full bg-accent text-[11px] font-semibold text-white"
-                  >
-                    Avaliar
-                  </button>
-                </article>
-              ))}
-            </div>
-          </div>
-        </div>
-      ) : null}
+      </div>
 
       {/* ── LOGIN ALERT MODAL ── */}
       {showLoginAlert ? (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-[24px] border border-white/15 bg-[rgba(11,17,25,0.97)] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.5)]">
-            <p className="text-[18px] font-semibold text-white">Faça login para salvar sua rota</p>
-            <div className="mt-4 flex gap-3">
+          <div className="w-full max-w-sm rounded-[24px] border border-white/15 bg-[rgba(11,17,25,0.97)] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.5)]">
+            <p className="text-[19px] font-bold text-white">Crie uma conta gratuita</p>
+            <p className="mt-1.5 text-[14px] text-white/60">Salve suas rotas e acesse de qualquer dispositivo.</p>
+            <div className="mt-5 flex gap-3">
               <button
                 type="button"
                 onClick={() => setShowLoginAlert(false)}
@@ -595,7 +644,7 @@ export function RoutePlannerScreen() {
                 onClick={() => router.push("/login")}
                 className="flex h-12 flex-1 items-center justify-center rounded-full bg-accent text-[15px] font-bold text-white"
               >
-                Entrar
+                Entrar / Criar conta
               </button>
             </div>
           </div>

@@ -104,3 +104,95 @@ select {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+/* ── Planner fullscreen layout ── */
+.planner-root {
+  position: relative;
+}
+
+.planner-map-area {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.planner-controls-area {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.planner-section-top {
+  padding: 0.75rem 0.75rem 0.25rem;
+  pointer-events: auto;
+  flex-shrink: 0;
+}
+
+.planner-suggestions {
+  flex: 1;
+  pointer-events: none;
+  display: flex;
+  align-items: flex-end;
+  padding: 0 0.75rem 0.25rem;
+  overflow: hidden;
+}
+
+.planner-section-bottom {
+  padding: 0.25rem 0.75rem;
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  pointer-events: auto;
+  flex-shrink: 0;
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .planner-root {
+    display: flex;
+    flex-direction: row;
+  }
+
+  .planner-map-area {
+    position: relative;
+    width: 60%;
+    flex-shrink: 0;
+    height: 100%;
+    order: 2;
+    inset: unset;
+    z-index: 0;
+  }
+
+  .planner-controls-area {
+    position: relative;
+    width: 40%;
+    flex-shrink: 0;
+    height: 100%;
+    order: 1;
+    inset: unset;
+    pointer-events: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: rgba(0, 0, 0, 0.9);
+    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(24px);
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .planner-section-top {
+    padding: 0.75rem 0.75rem 0.5rem;
+  }
+
+  .planner-suggestions {
+    flex: 0 0 auto;
+    display: block;
+    align-items: unset;
+    padding: 0 0.75rem 0.5rem;
+    overflow: visible;
+    pointer-events: auto;
+  }
+
+  .planner-section-bottom {
+    padding: 0.5rem 0.75rem 0.75rem;
+  }
+}

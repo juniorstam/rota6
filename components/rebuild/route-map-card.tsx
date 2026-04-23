@@ -76,13 +76,11 @@ function removeMarker(marker: any) {
 export function RouteMapCard({
   preview,
   hasRoutePoints,
-  waypoints,
-  children
+  waypoints
 }: {
   preview: RoutePreview | null;
   hasRoutePoints: boolean;
   waypoints: Waypoint[];
-  children?: React.ReactNode;
 }) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
@@ -313,7 +311,6 @@ export function RouteMapCard({
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#e8e8e8]">
       <div ref={mapContainerRef} className="absolute inset-0 z-0" />
-      {children}
     </div>
   );
 }
