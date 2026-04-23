@@ -356,10 +356,10 @@ export function RoutePlannerScreen() {
     kind === "origin" ? "#4ade80" : kind === "destination" ? "#fb7185" : "#fbbf24";
 
   return (
-    <div className="fixed inset-0 z-[60] planner-root">
+    <div className="fixed inset-0 z-[60] flex flex-col">
 
-      {/* ── MAP AREA ── */}
-      <div className="planner-map-area">
+      {/* ── MAP AREA — ocupa todo o espaço restante atrás dos controles ── */}
+      <div className="absolute inset-0">
         <RouteMapCard
           preview={preview}
           hasRoutePoints={routePoints > 1}
@@ -367,11 +367,11 @@ export function RoutePlannerScreen() {
         />
       </div>
 
-      {/* ── CONTROLS AREA ── */}
-      <div className="planner-controls-area">
+      {/* ── CONTROLS AREA — sobrepostos ao mapa ── */}
+      <div className="pointer-events-none relative z-10 flex h-full flex-col justify-between p-3 pb-28 md:p-4 md:pb-6">
 
         {/* TOP PANEL */}
-        <div className="planner-section-top">
+        <div className="pointer-events-auto w-full">
           <div className="overflow-visible rounded-[22px] border border-white/15 bg-black/80 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-xl">
             <div className="px-4 pt-4 pb-3">
 
@@ -468,7 +468,7 @@ export function RoutePlannerScreen() {
         </div>
 
         {/* SUGGESTIONS (middle gap — appears just above bottom panel) */}
-        <div className="planner-suggestions">
+        <div className="pointer-events-auto w-full">
           {routeSuggestions.length > 0 ? (
             <div className="pointer-events-auto w-full rounded-[18px] border border-white/10 bg-black/70 p-3 backdrop-blur-md">
               <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/50">Sugestões na rota</p>
@@ -497,7 +497,7 @@ export function RoutePlannerScreen() {
         </div>
 
         {/* BOTTOM PANEL */}
-        <div className="planner-section-bottom">
+        <div className="pointer-events-auto w-full">
           <div className="rounded-[22px] border border-white/15 bg-black/80 p-4 shadow-[0_-8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl">
 
             {/* LEG SCROLL */}
