@@ -509,7 +509,6 @@ export function RoutePlannerScreen() {
             ) : null}
           </div>
         </div>
-      </div>
 
       {/* ── BOTTOM SHEET — fixo na base, arrastável ── */}
       <div
