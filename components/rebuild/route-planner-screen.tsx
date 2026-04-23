@@ -393,6 +393,7 @@ export function RoutePlannerScreen() {
     kind === "origin" ? "#4ade80" : kind === "destination" ? "#fb7185" : "#fbbf24";
 
   // ── Handlers drag painel superior ──
+  // O painel sai pela topo: offset 0 = visível, offset negativo = escondido
   function onTopDragStart(e: React.PointerEvent) {
     e.currentTarget.setPointerCapture(e.pointerId);
     topDragStart.current = { y: e.clientY, offset: topOffset };
@@ -401,31 +402,64 @@ export function RoutePlannerScreen() {
     if (!topDragStart.current) return;
     const delta = e.clientY - topDragStart.current.y;
     const panelH = topRef.current?.offsetHeight ?? 200;
-    const newOffset = Math.max(-panelH + 20, Math.min(0, topDragStart.current.offset + delta));
-    setTopOffset(newOffset);
+    // Arrasta para cima (delta negativo): esconde. Para baixo: volta.
+    const raw = topDragStart.current.offset + delta;
+    // Resistência leve quando puxa além dos limites
+    const clamped = raw < -panelH ? -panelH - (raw + panelH) * 0.1
+                  : raw > 0       ? raw * 0.15
+                  : raw;
+    setTopOffset(clamped);
   }
-  function onTopDragEnd() {
+  function onTopDragEnd(e: React.PointerEvent) {
     if (!topDragStart.current) return;
+    const delta = e.clientY - topDragStart.current.y;
     const panelH = topRef.current?.offsetHeight ?? 200;
-    setTopOffset(topOffset < -(panelH * 0.4) ? -(panelH - 20) : 0);
+    // Velocidade: se arrastou rápido para cima (> 200px/s estimado) → esconde
+    // Threshold: passou 35% da altura → esconde
+    const hide = delta < -(panelH * 0.35) || (topOffset < -(panelH * 0.2) && delta < -10);
+    setTopOffset(hide ? -panelH : 0);
     topDragStart.current = null;
   }
 
-  // ── Handlers drag painel inferior ──
+  // ── Handlers drag painel inferior com 3 snaps reais ──
+  // peek = 60px (só handle), mid = botões+stats visíveis, full = tudo
+  // Usamos translateY para mover suavemente durante o drag
+  const [bottomDragDelta, setBottomDragDelta] = useState(0);
+
+  // Alturas reais por snap (estimadas; o CSS cuida do resto)
+  const snapHeights: Record<"peek" | "mid" | "full", string> = {
+    peek: "60px",
+    mid:  "min(52vh, 340px)",
+    full: "85dvh",
+  };
+
   function onBottomDragStart(e: React.PointerEvent) {
     e.currentTarget.setPointerCapture(e.pointerId);
     bottomDragStart.current = { y: e.clientY, snap: bottomSnap };
+    setBottomDragDelta(0);
+  }
+  function onBottomDragMove(e: React.PointerEvent) {
+    if (!bottomDragStart.current) return;
+    const delta = e.clientY - bottomDragStart.current.y;
+    // Resistência nos extremos
+    const bounded = delta > 0 && bottomSnap === "peek"  ? delta * 0.12
+                  : delta < 0 && bottomSnap === "full"  ? delta * 0.12
+                  : delta;
+    setBottomDragDelta(bounded);
   }
   function onBottomDragEnd(e: React.PointerEvent) {
     if (!bottomDragStart.current) return;
     const delta = e.clientY - bottomDragStart.current.y;
     const prev = bottomDragStart.current.snap;
-    if (delta < -50) setBottomSnap(prev === "peek" ? "mid" : "full");
-    else if (delta > 50) setBottomSnap(prev === "full" ? "mid" : "peek");
+    setBottomDragDelta(0);
+
+    if (delta < -60)      setBottomSnap(prev === "peek" ? "mid" : "full");
+    else if (delta > 60)  setBottomSnap(prev === "full" ? "mid" : "peek");
+    // Senão mantém o snap atual
     bottomDragStart.current = null;
   }
 
-  const bottomHeight = bottomSnap === "peek" ? "60px" : bottomSnap === "full" ? "85dvh" : "auto";
+  const bottomHeight = snapHeights[bottomSnap];
 
   return (
     <div className="fixed inset-0 z-[60] flex flex-col">
@@ -450,18 +484,7 @@ export function RoutePlannerScreen() {
       >
         <div className="overflow-visible rounded-[22px] border border-white/15 bg-black/80 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-xl">
 
-          {/* Handle de drag — parte de baixo do painel */}
-          <div
-            className="flex w-full cursor-grab touch-none items-center justify-center py-1.5 active:cursor-grabbing"
-            onPointerDown={onTopDragStart}
-            onPointerMove={onTopDragMove}
-            onPointerUp={onTopDragEnd}
-            onPointerCancel={onTopDragEnd}
-          >
-            <div className="h-1 w-10 rounded-full bg-white/25" />
-          </div>
-
-          <div className="px-4 pb-3">
+          <div className="px-4 pt-3 pb-1">
 
             {/* ORIGIN row */}
             <div className="flex items-start gap-3">
@@ -552,24 +575,39 @@ export function RoutePlannerScreen() {
               </button>
             </div>
           ) : null}
+
+          {/* Handle de drag — borda inferior do painel */}
+          <div
+            className="flex w-full cursor-grab touch-none items-center justify-center py-2 active:cursor-grabbing"
+            onPointerDown={onTopDragStart}
+            onPointerMove={onTopDragMove}
+            onPointerUp={onTopDragEnd}
+            onPointerCancel={onTopDragEnd}
+          >
+            <div className="h-1 w-10 rounded-full bg-white/20" />
+          </div>
         </div>
       </div>
       {/* ── BOTTOM SHEET — arrastável, fixo na base ── */}
       <div
         ref={bottomRef}
-        className="pointer-events-auto absolute bottom-0 left-0 right-0 z-20 flex flex-col rounded-t-[24px] border-t border-white/15 bg-black/85 pb-24 shadow-[0_-8px_32px_rgba(0,0,0,0.5)] backdrop-blur-xl md:pb-6"
+        className="pointer-events-auto absolute bottom-0 left-0 right-0 z-20 flex flex-col rounded-t-[24px] border-t border-white/15 bg-black/85 shadow-[0_-8px_32px_rgba(0,0,0,0.5)] backdrop-blur-xl"
         style={{
           height: bottomHeight,
           maxHeight: "85dvh",
           overflow: "hidden",
-          transition: bottomDragStart.current ? "none" : "height 0.35s cubic-bezier(0.4,0,0.2,1)"
+          transform: `translateY(${bottomDragDelta}px)`,
+          transition: bottomDragStart.current
+            ? "transform 0.05s linear"
+            : "height 0.38s cubic-bezier(0.32,0.72,0,1), transform 0.38s cubic-bezier(0.32,0.72,0,1)",
+          paddingBottom: "env(safe-area-inset-bottom, 24px)",
         }}
       >
-        {/* Handle de drag — única área que inicia o drag */}
+        {/* Handle de drag */}
         <div
-          className="flex w-full shrink-0 cursor-grab touch-none flex-col items-center gap-1 px-4 pt-3 pb-2 active:cursor-grabbing"
+          className="flex w-full shrink-0 cursor-grab touch-none flex-col items-center gap-1 px-4 pt-3 pb-2 active:cursor-grabbing select-none"
           onPointerDown={onBottomDragStart}
-          onPointerMove={(e) => { if (bottomDragStart.current) e.preventDefault(); }}
+          onPointerMove={onBottomDragMove}
           onPointerUp={onBottomDragEnd}
           onPointerCancel={onBottomDragEnd}
         >
@@ -578,7 +616,7 @@ export function RoutePlannerScreen() {
             <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-white/40">
               {preview
                 ? `${formatDistanceMask(preview.distanceKm)} · ${formatDuration(preview.durationMinutes)}`
-                : "Arraste para ver ações"}
+                : "Arraste para cima"}
             </p>
           )}
         </div>
