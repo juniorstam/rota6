@@ -26,17 +26,6 @@ type GoogleMapsConfig = {
 
 const DEFAULT_CENTER = { lat: -25.4284, lng: -49.2733 };
 
-const DARK_MAP_STYLES = [
-  { elementType: "geometry", stylers: [{ color: "#0a0f1a" }] },
-  { featureType: "water", elementType: "geometry", stylers: [{ color: "#060c18" }] },
-  { featureType: "road", elementType: "geometry", stylers: [{ color: "#1a2540" }] },
-  { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#0d1a30" }] },
-  { featureType: "poi", stylers: [{ visibility: "off" }] },
-  { featureType: "transit", stylers: [{ visibility: "off" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#8fa3bf" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#0a0f1a" }] },
-  { featureType: "administrative", elementType: "geometry", stylers: [{ color: "#253451" }] }
-];
 
 function markerColor(kind: WaypointKind): string {
   if (kind === "origin") return "#4ade80";
@@ -168,8 +157,6 @@ export function RouteMapCard({
 
       if (config.mapId) {
         mapOptions.mapId = config.mapId;
-      } else {
-        mapOptions.styles = DARK_MAP_STYLES;
       }
 
       const map = new gm.Map(mapContainerRef.current, mapOptions);

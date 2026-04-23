@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CircleAlert, Flag, LocateFixed, Map, Navigation, Plus, Save, Trash2, X } from "lucide-react";
+import { CircleAlert, Flag, LocateFixed, Map, Plus, Save, Trash2, X } from "lucide-react";
 
 import { LocationSearchField } from "@/components/rebuild/location-search-field";
 import { RouteMapCard } from "@/components/rebuild/route-map-card";
@@ -18,84 +18,6 @@ import {
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/auth-provider";
 
-const PLANNER_PRESETS: Array<{
-  label: string;
-  note: string;
-  origin: SearchSuggestion;
-  destination: SearchSuggestion;
-  stops: Array<{ suggestion: SearchSuggestion; type: StopType }>;
-}> = [
-  {
-    label: "Serra do Rio do Rastro",
-    note: "Trecho clássico para validar ida, apoio e vista.",
-    origin: {
-      id: "preset-florianopolis",
-      name: "Florianópolis",
-      fullAddress: "Florianópolis, SC, Brasil",
-      lat: -27.5949,
-      lng: -48.5482
-    },
-    destination: {
-      id: "preset-bom-jardim",
-      name: "Bom Jardim da Serra",
-      fullAddress: "Bom Jardim da Serra, SC, Brasil",
-      lat: -28.3378,
-      lng: -49.6246
-    },
-    stops: [
-      {
-        suggestion: {
-          id: "preset-tubarao",
-          name: "Tubarão",
-          fullAddress: "Tubarão, SC, Brasil",
-          lat: -28.4667,
-          lng: -49.0069
-        },
-        type: "fuel"
-      },
-      {
-        suggestion: {
-          id: "preset-orleans",
-          name: "Orleans",
-          fullAddress: "Orleans, SC, Brasil",
-          lat: -28.3581,
-          lng: -49.2916
-        },
-        type: "food"
-      }
-    ]
-  },
-  {
-    label: "Serra da Graciosa",
-    note: "Bom cenário para testar rota curta com uma parada.",
-    origin: {
-      id: "preset-curitiba",
-      name: "Curitiba",
-      fullAddress: "Curitiba, PR, Brasil",
-      lat: -25.4284,
-      lng: -49.2733
-    },
-    destination: {
-      id: "preset-morretes",
-      name: "Morretes",
-      fullAddress: "Morretes, PR, Brasil",
-      lat: -25.4761,
-      lng: -48.8343
-    },
-    stops: [
-      {
-        suggestion: {
-          id: "preset-quatro-barras",
-          name: "Quatro Barras",
-          fullAddress: "Quatro Barras, PR, Brasil",
-          lat: -25.3653,
-          lng: -49.0768
-        },
-        type: "viewpoint"
-      }
-    ]
-  }
-];
 
 const ROUTE_SUGGESTION_CATEGORY_LABELS: Record<RouteSuggestion["category"], string> = {
   restaurant: "Restaurante",
@@ -521,20 +443,6 @@ export function RoutePlannerScreen() {
     }
   }
 
-  function applyPreset(preset: (typeof PLANNER_PRESETS)[number]) {
-    setOrigin(preset.origin);
-    setDestination(preset.destination);
-    setStops(
-      preset.stops.map((stop) => ({
-        suggestion: stop.suggestion,
-        type: stop.type
-      }))
-    );
-    setPreview(null);
-    setRouteSuggestions([]);
-    setFeedback(`Preset "${preset.label}" carregado. Revise os pontos e calcule a rota.`);
-  }
-
   function swapOriginAndDestination() {
     setOrigin(destination);
     setDestination(origin);
@@ -757,29 +665,6 @@ export function RoutePlannerScreen() {
           </div>
         </section>
       ) : null}
-
-      <section className="rounded-[22px] bg-surface/50 px-4 py-3">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.16em] text-muted">Sugestões</p>
-            <p className="mt-1 text-sm text-text">Rotas rápidas para testar a experiência.</p>
-          </div>
-          <Map size={16} className="text-accentSoft" />
-        </div>
-
-        <div className="mt-3 flex flex-wrap gap-2">
-          {PLANNER_PRESETS.map((preset) => (
-            <button
-              key={preset.label}
-              type="button"
-              onClick={() => applyPreset(preset)}
-              className="rounded-full border border-border/80 bg-background/80 px-3 py-2 text-sm text-text transition hover:border-accent/70 hover:bg-surfaceAlt"
-            >
-              {preset.label}
-            </button>
-          ))}
-        </div>
-      </section>
 
       {showLoginAlert ? (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-[rgba(5,9,14,0.68)] p-4 backdrop-blur-sm">
