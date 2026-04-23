@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CircleAlert, Flag, LocateFixed, Map, Plus, Save, Trash2, X } from "lucide-react";
+import { CircleAlert, Flag, LoaderCircle, LocateFixed, Map, Plus, Save, Trash2, X } from "lucide-react";
 
 import { LocationSearchField } from "@/components/rebuild/location-search-field";
 import { RouteMapCard } from "@/components/rebuild/route-map-card";
@@ -17,7 +17,6 @@ import {
 } from "@/lib/rebuild/types";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/auth-provider";
-
 
 const ROUTE_SUGGESTION_CATEGORY_LABELS: Record<RouteSuggestion["category"], string> = {
   restaurant: "Restaurante",
@@ -39,6 +38,15 @@ const REVIEW_TAGS = [
   "parada rápida",
   "ideal para viagem"
 ];
+
+function formatDuration(durationMinutes: number | null) {
+  if (!durationMinutes || durationMinutes <= 0) return "—";
+  const hours = Math.floor(durationMinutes / 60);
+  const minutes = durationMinutes % 60;
+  if (hours === 0) return `${minutes} min`;
+  if (minutes === 0) return `${hours}h`;
+  return `${hours}h ${minutes}min`;
+}
 
 async function authFetch(path: string, init?: RequestInit) {
   const supabase = getSupabaseBrowserClient();
@@ -72,7 +80,7 @@ export function RoutePlannerScreen() {
   const router = useRouter();
   const params = useSearchParams();
   const routeId = params.get("route");
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
 
   const [origin, setOrigin] = useState<SearchSuggestion | null>(null);
   const [destination, setDestination] = useState<SearchSuggestion | null>(null);
@@ -99,9 +107,8 @@ export function RoutePlannerScreen() {
       setFeedback(message);
       return;
     }
-
     setFeedback((current) =>
-      current === "Rota salva com sucesso." ? current : "Você alterou o trajeto. Recalcule para atualizar a prévia."
+      current === "Rota salva com sucesso." ? current : "Trajeto alterado. Recalcule para atualizar."
     );
   }
 
@@ -121,53 +128,40 @@ export function RoutePlannerScreen() {
   }
 
   function handleRemoveStop(index: number) {
-    setStops((current) => current.filter((_, itemIndex) => itemIndex !== index));
-    clearPreviewWithFeedback("Parada removida. Recalcule para atualizar a rota.");
+    setStops((current) => current.filter((_, i) => i !== index));
+    clearPreviewWithFeedback("Parada removida. Recalcule a rota.");
   }
 
   async function fillOriginWithCurrentLocation() {
     if (!navigator.geolocation) {
-      setFeedback("Seu navegador não oferece geolocalização.");
+      setFeedback("Seu navegador não suporta geolocalização.");
       return;
     }
-
     setLocatingOrigin(true);
     setFeedback(null);
-
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         try {
-          const current = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          };
+          const current = { lat: position.coords.latitude, lng: position.coords.longitude };
           setUserLocation(current);
-          const params = new URLSearchParams({
-            latitude: current.lat.toString(),
-            longitude: current.lng.toString()
-          });
-          const response = await fetch(`/api/maps/reverse?${params.toString()}`);
-          const payload = response.ok ? ((await response.json()) as { label: string }) : null;
-          const label = payload?.label ?? "Minha posição atual";
-
+          const p = new URLSearchParams({ latitude: current.lat.toString(), longitude: current.lng.toString() });
+          const res = await fetch(`/api/maps/reverse?${p.toString()}`);
+          const payload = res.ok ? ((await res.json()) as { label: string }) : null;
           setOrigin({
-            id: `current-${position.coords.latitude}-${position.coords.longitude}`,
+            id: `current-${current.lat}-${current.lng}`,
             name: "Minha posição",
-            fullAddress: label,
+            fullAddress: payload?.label ?? "Minha posição atual",
             lat: current.lat,
             lng: current.lng
           });
           clearPreviewWithFeedback();
         } catch {
-          const current = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          };
+          const current = { lat: position.coords.latitude, lng: position.coords.longitude };
           setUserLocation(current);
           setOrigin({
-            id: `current-${position.coords.latitude}-${position.coords.longitude}`,
+            id: `current-${current.lat}-${current.lng}`,
             name: "Minha posição",
-            fullAddress: `${position.coords.latitude.toFixed(5)}, ${position.coords.longitude.toFixed(5)}`,
+            fullAddress: `${current.lat.toFixed(5)}, ${current.lng.toFixed(5)}`,
             lat: current.lat,
             lng: current.lng
           });
@@ -177,269 +171,131 @@ export function RoutePlannerScreen() {
         }
       },
       () => {
-        setFeedback("Não consegui acessar sua localização atual.");
+        setFeedback("Não foi possível acessar sua localização.");
         setLocatingOrigin(false);
       },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000
-      }
+      { enableHighAccuracy: true, timeout: 10000 }
     );
   }
 
   function confirmStop() {
-    if (!pendingStop) {
-      return;
-    }
-
+    if (!pendingStop) return;
     setStops((current) => [...current, { suggestion: pendingStop, type: "rest" }]);
     setShowStopModal(false);
     setPendingStop(null);
-    clearPreviewWithFeedback("Parada adicionada. Recalcule para atualizar a rota.");
+    clearPreviewWithFeedback("Parada adicionada. Recalcule a rota.");
   }
 
   useEffect(() => {
-    if (!routeId || !user) {
-      return;
-    }
+    if (!routeId || !user) return;
 
     authFetch(`/api/routes/${routeId}`)
-      .then(async (response) => {
-        if (!response.ok) {
-          const payload = (await response.json().catch(() => null)) as { message?: string } | null;
-          throw new Error(payload?.message ?? "Não foi possível abrir a rota.");
+      .then(async (res) => {
+        if (!res.ok) {
+          const p = (await res.json().catch(() => null)) as { message?: string } | null;
+          throw new Error(p?.message ?? "Não foi possível abrir a rota.");
         }
-        return (await response.json()) as RouteRecord;
+        return (await res.json()) as RouteRecord;
       })
       .then(async (route) => {
-        setOrigin({
-          id: `origin-${route.id}`,
-          name: route.origin.name,
-          fullAddress: route.origin.name,
-          lat: route.origin.lat,
-          lng: route.origin.lng
-        });
-        setDestination({
-          id: `destination-${route.id}`,
-          name: route.destination.name,
-          fullAddress: route.destination.name,
-          lat: route.destination.lat,
-          lng: route.destination.lng
-        });
-        setStops(
-          route.stops.map((stop) => ({
-            id: stop.id,
-            type: stop.type,
-            suggestion: {
-              id: stop.id ?? crypto.randomUUID(),
-              name: stop.name,
-              fullAddress: stop.name,
-              lat: stop.lat,
-              lng: stop.lng
-            }
-          }))
-        );
-        setPreview({
-          geometry: [],
-          distanceKm: route.distanceKm,
-          durationMinutes: route.durationMinutes,
-          staticMapUrl: null,
-          live: false
-        });
+        setOrigin({ id: `origin-${route.id}`, name: route.origin.name, fullAddress: route.origin.name, lat: route.origin.lat, lng: route.origin.lng });
+        setDestination({ id: `destination-${route.id}`, name: route.destination.name, fullAddress: route.destination.name, lat: route.destination.lat, lng: route.destination.lng });
+        setStops(route.stops.map((stop) => ({
+          id: stop.id,
+          type: stop.type,
+          suggestion: { id: stop.id ?? crypto.randomUUID(), name: stop.name, fullAddress: stop.name, lat: stop.lat, lng: stop.lng }
+        })));
+        setPreview({ geometry: [], distanceKm: route.distanceKm, durationMinutes: route.durationMinutes, staticMapUrl: null, live: false });
 
-        const response = await fetch("/api/route-preview", {
+        const res = await fetch("/api/route-preview", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            origin: route.origin,
-            destination: route.destination,
-            distanceKm: route.distanceKm,
-            durationMinutes: route.durationMinutes,
-            stops: route.stops
-          } satisfies RoutePayload)
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ origin: route.origin, destination: route.destination, distanceKm: route.distanceKm, durationMinutes: route.durationMinutes, stops: route.stops } satisfies RoutePayload)
         });
-
-        if (response.ok) {
-          setPreview((await response.json()) as RoutePreview);
-        }
+        if (res.ok) setPreview((await res.json()) as RoutePreview);
       })
-      .catch((error) => {
-        setFeedback(error instanceof Error ? error.message : "Não foi possível abrir a rota.");
-      });
+      .catch((err) => setFeedback(err instanceof Error ? err.message : "Não foi possível abrir a rota."));
   }, [routeId, user]);
 
   const canCalculate = Boolean(origin && destination);
   const canSave = Boolean(origin && destination);
-  const readyStops = stops.filter((stop) => stop.suggestion).length;
-  const routePoints = [origin, ...stops.map((stop) => stop.suggestion), destination].filter(Boolean).length;
+  const routePoints = [origin, ...stops.map((s) => s.suggestion), destination].filter(Boolean).length;
+
   const waypointMarkers = useMemo(
     () =>
       [
         origin ? { lat: origin.lat, lng: origin.lng, kind: "origin" as const } : null,
-        ...stops.flatMap((stop) =>
-          stop.suggestion ? [{ lat: stop.suggestion.lat, lng: stop.suggestion.lng, kind: "stop" as const }] : []
-        ),
+        ...stops.flatMap((s) => s.suggestion ? [{ lat: s.suggestion.lat, lng: s.suggestion.lng, kind: "stop" as const }] : []),
         destination ? { lat: destination.lat, lng: destination.lng, kind: "destination" as const } : null
-      ].filter((point): point is { lat: number; lng: number; kind: "origin" | "stop" | "destination" } => Boolean(point)),
+      ].filter((p): p is { lat: number; lng: number; kind: "origin" | "stop" | "destination" } => Boolean(p)),
     [destination, origin, stops]
   );
 
   const payload = useMemo<RoutePayload | null>(() => {
-    if (!origin || !destination) {
-      return null;
-    }
-
+    if (!origin || !destination) return null;
     return {
-      origin: {
-        name: origin.fullAddress,
-        lat: origin.lat,
-        lng: origin.lng,
-        placeType: origin.type
-      },
-      destination: {
-        name: destination.fullAddress,
-        lat: destination.lat,
-        lng: destination.lng,
-        placeType: destination.type
-      },
+      origin: { name: origin.fullAddress, lat: origin.lat, lng: origin.lng, placeType: origin.type },
+      destination: { name: destination.fullAddress, lat: destination.lat, lng: destination.lng, placeType: destination.type },
       distanceKm: preview?.distanceKm ?? null,
       durationMinutes: preview?.durationMinutes ?? null,
-      stops: stops.flatMap((stop, index) => {
-        if (!stop.suggestion) {
-          return [];
-        }
-
-        return [
-          suggestionToStop(stop.suggestion, index, {
-            id: stop.id,
-            name: stop.suggestion.fullAddress,
-            lat: stop.suggestion.lat,
-            lng: stop.suggestion.lng,
-            type: stop.type,
-            orderIndex: index
-          })
-        ];
-      })
+      stops: stops.flatMap((s, i) =>
+        s.suggestion ? [suggestionToStop(s.suggestion, i, { id: s.id, name: s.suggestion.fullAddress, lat: s.suggestion.lat, lng: s.suggestion.lng, type: s.type, orderIndex: i })] : []
+      )
     };
   }, [destination, origin, preview?.distanceKm, preview?.durationMinutes, stops]);
 
   async function calculateRoute() {
-    if (!payload) {
-      setFeedback("Escolha origem e destino para calcular a rota.");
-      return;
-    }
-
+    if (!payload) { setFeedback("Escolha origem e destino para calcular."); return; }
     setBusyPreview(true);
     setFeedback(null);
-
     try {
-      const response = await fetch("/api/route-preview", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const result = (await response.json()) as RoutePreview | { message?: string };
-      if (!response.ok) {
-        throw new Error("message" in result ? result.message : "Não foi possível calcular a rota.");
-      }
-
+      const res = await fetch("/api/route-preview", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const result = (await res.json()) as RoutePreview | { message?: string };
+      if (!res.ok) throw new Error("message" in result ? result.message : "Não foi possível calcular a rota.");
       setPreview(result as RoutePreview);
 
-      const suggestionsResponse = await fetch("/api/route-suggestions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          payload,
-          geometry: (result as RoutePreview).geometry
-        })
-      });
-
-      if (suggestionsResponse.ok) {
-        setRouteSuggestions((await suggestionsResponse.json()) as RouteSuggestion[]);
-      }
-    } catch (error) {
-      setFeedback(error instanceof Error ? error.message : "Não foi possível calcular a rota.");
+      const sugRes = await fetch("/api/route-suggestions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ payload, geometry: (result as RoutePreview).geometry }) });
+      if (sugRes.ok) setRouteSuggestions((await sugRes.json()) as RouteSuggestion[]);
+    } catch (err) {
+      setFeedback(err instanceof Error ? err.message : "Não foi possível calcular a rota.");
     } finally {
       setBusyPreview(false);
     }
   }
 
   async function saveRoute() {
-    if (!payload) {
-      setFeedback("Preencha origem e destino antes de salvar.");
-      return;
-    }
-
-    if (!user) {
-      setShowLoginAlert(true);
-      return;
-    }
-
+    if (!payload) { setFeedback("Preencha origem e destino antes de salvar."); return; }
+    if (!user) { setShowLoginAlert(true); return; }
     setBusySave(true);
     setFeedback(null);
-
     try {
-      const response = await authFetch(routeId ? `/api/routes/${routeId}` : "/api/routes", {
-        method: routeId ? "PATCH" : "POST",
-        body: JSON.stringify(payload)
-      });
-
-      const result = (await response.json()) as RouteRecord | { message?: string };
-      if (!response.ok) {
-        throw new Error("message" in result ? result.message : "Não foi possível salvar a rota.");
-      }
-
-      const savedRoute = result as RouteRecord;
+      const res = await authFetch(routeId ? `/api/routes/${routeId}` : "/api/routes", { method: routeId ? "PATCH" : "POST", body: JSON.stringify(payload) });
+      const result = (await res.json()) as RouteRecord | { message?: string };
+      if (!res.ok) throw new Error("message" in result ? result.message : "Não foi possível salvar a rota.");
+      const saved = result as RouteRecord;
       setFeedback("Rota salva com sucesso.");
-      router.replace(`/planejar?route=${savedRoute.id}`);
+      router.replace(`/planejar?route=${saved.id}`);
       router.refresh();
-    } catch (error) {
-      setFeedback(error instanceof Error ? error.message : "Não foi possível salvar a rota.");
+    } catch (err) {
+      setFeedback(err instanceof Error ? err.message : "Não foi possível salvar a rota.");
     } finally {
       setBusySave(false);
     }
   }
 
   async function savePlaceRating() {
-    if (!reviewTarget) {
-      return;
-    }
-
-    if (!user) {
-      setShowLoginAlert(true);
-      return;
-    }
-
+    if (!reviewTarget) return;
+    if (!user) { setShowLoginAlert(true); return; }
     try {
-      const response = await authFetch("/api/place-reviews", {
-        method: "POST",
-        body: JSON.stringify({
-          placeId: reviewTarget.id,
-          rating: reviewRating,
-          comment: reviewComment,
-          tags: reviewTags
-        })
-      });
-
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as { message?: string } | null;
-        throw new Error(payload?.message ?? "Não foi possível salvar a avaliação.");
-      }
-
+      const res = await authFetch("/api/place-reviews", { method: "POST", body: JSON.stringify({ placeId: reviewTarget.id, rating: reviewRating, comment: reviewComment, tags: reviewTags }) });
+      if (!res.ok) { const p = (await res.json().catch(() => null)) as { message?: string } | null; throw new Error(p?.message ?? "Não foi possível salvar a avaliação."); }
       setReviewTarget(null);
       setReviewComment("");
       setReviewTags([]);
       setReviewRating(5);
       setFeedback("Avaliação salva. Obrigado por fortalecer a comunidade Rota 6.");
-    } catch (error) {
-      setFeedback(error instanceof Error ? error.message : "Não foi possível salvar a avaliação.");
+    } catch (err) {
+      setFeedback(err instanceof Error ? err.message : "Não foi possível salvar a avaliação.");
     }
   }
 
@@ -448,7 +304,7 @@ export function RoutePlannerScreen() {
     setDestination(origin);
     setPreview(null);
     setRouteSuggestions([]);
-    setFeedback("Origem e destino foram invertidos. Recalcule para atualizar a prévia.");
+    setFeedback("Origem e destino invertidos. Recalcule a rota.");
   }
 
   function resetPlanner() {
@@ -457,231 +313,287 @@ export function RoutePlannerScreen() {
     setStops([]);
     setPreview(null);
     setRouteSuggestions([]);
-    setFeedback("Planejador limpo para começar uma rota nova.");
-
-    if (routeId) {
-      router.replace("/planejar");
-    }
+    setFeedback(null);
+    if (routeId) router.replace("/planejar");
   }
 
+  /* ───── waypoints for leg scroll ───── */
+  const legPoints = useMemo(() => {
+    const points: { id: string; name: string; kind: "origin" | "stop" | "destination" }[] = [];
+    if (origin) points.push({ id: origin.id, name: origin.name, kind: "origin" });
+    stops.forEach((s) => { if (s.suggestion) points.push({ id: s.suggestion.id, name: s.suggestion.name, kind: "stop" }); });
+    if (destination) points.push({ id: destination.id, name: destination.name, kind: "destination" });
+    return points;
+  }, [origin, stops, destination]);
+
+  const dotColor = (kind: "origin" | "stop" | "destination") =>
+    kind === "origin" ? "#4ade80" : kind === "destination" ? "#fb7185" : "#fbbf24";
+
   return (
-    <div className="space-y-3 md:space-y-4">
+    /* fullscreen container — covers header and mobile nav */
+    <div className="fixed inset-0 z-[60] overflow-hidden">
       <RouteMapCard preview={preview} hasRoutePoints={routePoints > 1} waypoints={waypointMarkers}>
-        <div className="pointer-events-auto space-y-1.5">
-          <div className="grid gap-1.5">
-            <LocationSearchField
-              label="Origem"
-              value={origin}
-              onSelect={handleOriginSelect}
-              placeholder="Origem"
-              compact
-              icon={<LocateFixed size={13} />}
-              onIconClick={fillOriginWithCurrentLocation}
-              iconButtonLabel="Usar localização atual"
-              iconLoading={locatingOrigin}
-              proximity={userLocation}
-            />
 
-            <LocationSearchField
-              label="Destino"
-              value={destination}
-              onSelect={handleDestinationSelect}
-              placeholder="Destino"
-              compact
-              icon={<Flag size={13} />}
-              proximity={userLocation}
-            />
+        {/* ── TOP PANEL ── */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-30 p-3 pb-1">
+          <div className="pointer-events-auto overflow-visible rounded-[22px] border border-white/15 bg-black/80 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+            <div className="px-4 pt-4 pb-3">
 
-            <div className="flex justify-end pr-1 pt-0">
-              <button
-                type="button"
-                onClick={swapOriginAndDestination}
-                disabled={!origin && !destination}
-                className="text-xs text-muted transition hover:text-text disabled:opacity-50"
-              >
-                inverter
-              </button>
-            </div>
-          </div>
-        </div>
-      </RouteMapCard>
+              {/* ORIGIN row */}
+              <div className="flex items-start gap-3">
+                <div className="flex shrink-0 flex-col items-center">
+                  <div className="mt-[18px] flex h-5 w-5 items-center justify-center rounded-full bg-[#4ade80] shadow-[0_0_8px_rgba(74,222,128,0.5)]">
+                    <div className="h-2 w-2 rounded-full bg-white" />
+                  </div>
+                  <div className="mt-1.5 border-l-2 border-dashed border-white/25" style={{ height: stops.length > 0 ? 28 : 20 }} />
+                </div>
+                <div className="flex min-w-0 flex-1 items-center gap-2">
+                  <div className="min-w-0 flex-1">
+                    <LocationSearchField
+                      label="Origem"
+                      value={origin}
+                      onSelect={handleOriginSelect}
+                      placeholder="De onde você sai?"
+                      compact
+                      proximity={userLocation}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={fillOriginWithCurrentLocation}
+                    aria-label="Usar minha localização"
+                    className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[16px] border border-white/20 bg-white/10 text-white transition active:bg-white/20"
+                  >
+                    {locatingOrigin
+                      ? <LoaderCircle size={18} className="animate-spin" />
+                      : <LocateFixed size={18} />}
+                  </button>
+                </div>
+              </div>
 
-      <section className="rounded-[24px] bg-[linear-gradient(180deg,rgba(15,21,30,0.78)_0%,rgba(11,16,23,0.84)_100%)] px-3.5 py-3 md:px-4">
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            type="button"
-            onClick={handleAddStop}
-            className="inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-full border border-border/80 bg-background/82 px-3 text-[13px] font-medium text-text md:px-4 md:text-sm"
-          >
-            <Plus size={14} />
-            + adicionar parada
-          </button>
+              {/* STOPS */}
+              {stops.map((stop, index) => (
+                <div key={`${stop.id ?? "new"}-${index}`} className="flex items-start gap-3">
+                  <div className="flex shrink-0 flex-col items-center">
+                    <div className="mt-[18px] h-4 w-4 shrink-0 rounded-full border-2 border-white/80 bg-[#fbbf24] shadow-[0_0_6px_rgba(251,191,36,0.5)]" />
+                    <div className="mt-1.5 border-l-2 border-dashed border-white/25" style={{ height: 20 }} />
+                  </div>
+                  <div className="flex min-w-0 flex-1 items-center gap-2">
+                    <div className="flex h-[52px] min-w-0 flex-1 items-center rounded-[16px] border border-white/20 bg-white/10 px-4">
+                      <p className="truncate text-[16px] font-medium text-white">
+                        {stop.suggestion?.name ?? "Parada " + (index + 1)}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveStop(index)}
+                      aria-label="Remover parada"
+                      className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[16px] border border-white/20 bg-white/10 text-white/70 transition active:bg-white/20"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                </div>
+              ))}
 
-          <button
-            type="button"
-            onClick={calculateRoute}
-            disabled={!canCalculate || busyPreview}
-            className="inline-flex h-10 min-w-0 items-center justify-center whitespace-nowrap rounded-full bg-accent px-3 text-[13px] font-semibold text-background shadow-[0_18px_40px_rgba(47,128,237,0.24)] disabled:opacity-50 md:px-4 md:text-sm"
-          >
-            {busyPreview ? "Calculando..." : "Calcular rota"}
-          </button>
-        </div>
-
-        {stops.length === 0 ? null : (
-          <div className="mt-4 space-y-2">
-            {stops.map((stop, index) => (
-              <div key={`${stop.id ?? "new"}-${index}`} className="flex items-center justify-between gap-3 rounded-[18px] px-1 py-1">
-                <div className="min-w-0">
-                  <p className="text-[11px] uppercase tracking-[0.14em] text-muted">Parada {index + 1}</p>
-                  <p className="truncate text-sm text-text">{stop.suggestion?.fullAddress}</p>
+              {/* ADD STOP button */}
+              <div className="flex items-center gap-3 py-2">
+                <div className="flex w-5 justify-center">
+                  <div className="h-px w-px" />
                 </div>
                 <button
                   type="button"
-                  onClick={() => handleRemoveStop(index)}
-                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/80 text-muted"
-                  aria-label="Remover parada"
+                  onClick={handleAddStop}
+                  className="flex items-center gap-2 text-[13px] text-white/50 transition hover:text-white/80 active:text-white"
                 >
-                  <Trash2 size={14} />
+                  <div className="flex h-5 w-5 items-center justify-center rounded-full border border-white/30 bg-white/10">
+                    <Plus size={11} />
+                  </div>
+                  Adicionar parada
                 </button>
               </div>
-            ))}
-          </div>
-        )}
-      </section>
 
-      <section className="rounded-[24px] bg-[linear-gradient(180deg,rgba(18,24,32,0.74)_0%,rgba(12,17,24,0.84)_100%)] px-3.5 py-3 md:px-4">
-        <div className="grid grid-cols-[1fr_auto] gap-3">
-          <button
-            type="button"
-            onClick={saveRoute}
-            disabled={!canSave || busySave}
-            className="inline-flex h-10 min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-full bg-accent px-3 text-[13px] font-semibold text-background shadow-[0_18px_40px_rgba(47,128,237,0.24)] disabled:opacity-50 md:px-4 md:text-sm"
-          >
-            <Save size={14} />
-            {busySave ? "Salvando..." : routeId ? "Atualizar" : "Salvar"}
-          </button>
-        </div>
-
-        <div className="mt-3 flex items-center justify-between gap-3">
-          {preview ? (
-            <p className="text-xs text-muted">
-              {preview.provider === "mapbox"
-                ? "Rota por estrada com Mapbox."
-                : preview.provider === "osrm"
-                  ? "Rota por estrada com engine de fallback."
-                  : "Rota em modo básico."}
-            </p>
-          ) : (
-            <span />
-          )}
-          <button
-            type="button"
-            onClick={resetPlanner}
-            disabled={!origin && !destination && stops.length === 0 && !preview}
-            className="inline-flex h-9 items-center gap-2 whitespace-nowrap rounded-full border border-border/80 bg-background/82 px-3 text-xs text-text disabled:opacity-50"
-          >
-            <Trash2 size={13} />
-            limpar
-          </button>
-        </div>
-
-        {feedback ? (
-          <div className="mt-3 flex items-start gap-3 rounded-[18px] border border-border/80 bg-background/76 px-3 py-3">
-            <CircleAlert size={16} className="mt-0.5 shrink-0 text-accentSoft" />
-            <p className="text-sm leading-6 text-muted">{feedback}</p>
-          </div>
-        ) : null}
-      </section>
-
-      {payload ? (
-        <section className="rounded-[24px] bg-[linear-gradient(180deg,rgba(18,24,32,0.58)_0%,rgba(12,17,24,0.72)_100%)] px-3.5 py-3 md:px-4">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-[11px] uppercase tracking-[0.16em] text-muted">Rota</p>
-              <p className="mt-1 text-sm text-text">{origin?.name} → {destination?.name}</p>
-            </div>
-            <span className="rounded-full border border-white/10 px-2.5 py-1 text-xs text-muted">
-              {readyStops} parada{readyStops === 1 ? "" : "s"}
-            </span>
-          </div>
-
-          <div className="mt-3 space-y-1.5 text-sm text-muted">
-            <p className="truncate"><span className="text-text">Origem:</span> {origin?.fullAddress}</p>
-            {stops.map((stop, index) =>
-              stop.suggestion ? (
-                <p key={`${stop.id ?? "route-stop"}-${index}`} className="truncate">
-                  <span className="text-text">Parada {index + 1}:</span> {stop.suggestion.fullAddress}
-                </p>
-              ) : null
-            )}
-            <p className="truncate"><span className="text-text">Destino:</span> {destination?.fullAddress}</p>
-          </div>
-        </section>
-      ) : null}
-
-      {routeSuggestions.length > 0 ? (
-        <section className="rounded-[24px] bg-[linear-gradient(180deg,rgba(18,24,32,0.58)_0%,rgba(12,17,24,0.72)_100%)] px-3.5 py-3 md:px-4">
-          <p className="text-[11px] uppercase tracking-[0.16em] text-muted">Sugestões na sua rota</p>
-          <div className="mt-3 grid gap-2 md:grid-cols-2">
-            {routeSuggestions.map((place) => (
-              <article key={place.id} className="rounded-[18px] border border-white/10 bg-background/60 p-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-text">{place.name}</p>
-                    <p className="mt-1 text-xs text-muted">
-                      {ROUTE_SUGGESTION_CATEGORY_LABELS[place.category]} · {place.city}/{place.state}
-                    </p>
+              {/* DESTINATION row */}
+              <div className="flex items-start gap-3">
+                <div className="flex shrink-0 flex-col items-center">
+                  <div className="mt-[18px] flex h-5 w-5 shrink-0 items-center justify-center">
+                    <Flag size={18} className="text-[#fb7185] drop-shadow-[0_0_6px_rgba(251,113,133,0.6)]" />
                   </div>
-                  <span className="shrink-0 rounded-full bg-accent/15 px-2 py-1 text-xs font-semibold text-accentSoft">
-                    {place.averageRating.toFixed(1)}
-                  </span>
                 </div>
-                <p className="mt-2 text-xs text-muted">
-                  {place.ratingsCount} avaliações · desvio aprox. {place.detourKm} km
-                </p>
-                <div className="mt-3 grid grid-cols-2 gap-2">
+                <div className="min-w-0 flex-1">
+                  <LocationSearchField
+                    label="Destino"
+                    value={destination}
+                    onSelect={handleDestinationSelect}
+                    placeholder="Para onde você vai?"
+                    compact
+                    proximity={userLocation}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Swap + invert */}
+            {(origin || destination) ? (
+              <div className="flex items-center justify-end border-t border-white/10 px-4 py-2">
+                <button
+                  type="button"
+                  onClick={swapOriginAndDestination}
+                  className="text-[12px] font-medium text-white/50 transition hover:text-white/80"
+                >
+                  ⇅ inverter origem e destino
+                </button>
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        {/* ── BOTTOM PANEL ── */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 p-3 pt-1 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <div className="pointer-events-auto rounded-[22px] border border-white/15 bg-black/80 p-4 shadow-[0_-8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl">
+
+            {/* LEG SCROLL — shown when preview exists and has multiple points */}
+            {preview && legPoints.length >= 2 ? (
+              <div className="mb-4">
+                <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto pb-1">
+                  {legPoints.map((point, index) => (
+                    <Fragment key={point.id}>
+                      <div className="flex shrink-0 flex-col items-center gap-1.5 rounded-[14px] border border-white/15 bg-white/10 px-3 py-2.5">
+                        <div
+                          className="h-3 w-3 rounded-full border border-white/60"
+                          style={{ background: dotColor(point.kind) }}
+                        />
+                        <p className="max-w-[72px] truncate text-center text-[12px] font-semibold leading-tight text-white">
+                          {point.name}
+                        </p>
+                      </div>
+                      {index < legPoints.length - 1 ? (
+                        <span className="shrink-0 text-[18px] leading-none text-white/30">→</span>
+                      ) : null}
+                    </Fragment>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {/* STATS — shown when preview exists */}
+            {preview ? (
+              <div className="mb-4 grid grid-cols-2 gap-3">
+                <div className="rounded-[16px] bg-white/10 px-4 py-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">Distância</p>
+                  <p className="mt-1 text-[22px] font-bold leading-tight text-white">
+                    {preview.distanceKm ? `${preview.distanceKm} km` : "—"}
+                  </p>
+                </div>
+                <div className="rounded-[16px] bg-white/10 px-4 py-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">Tempo</p>
+                  <p className="mt-1 text-[22px] font-bold leading-tight text-white">
+                    {formatDuration(preview.durationMinutes)}
+                  </p>
+                </div>
+              </div>
+            ) : null}
+
+            {/* ACTION BUTTONS */}
+            {!preview ? (
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={handleAddStop}
+                  className="flex h-14 items-center justify-center gap-2 rounded-[16px] border border-white/20 bg-white/10 text-[15px] font-semibold text-white transition active:bg-white/20"
+                >
+                  <Plus size={18} />
+                  Parada
+                </button>
+                <button
+                  type="button"
+                  onClick={calculateRoute}
+                  disabled={!canCalculate || busyPreview}
+                  className="flex h-14 items-center justify-center rounded-[16px] bg-accent text-[15px] font-bold text-white shadow-[0_8px_24px_rgba(47,128,237,0.45)] transition disabled:opacity-50 active:scale-[0.98]"
+                >
+                  {busyPreview ? "Calculando..." : "Calcular rota"}
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={saveRoute}
+                  disabled={!canSave || busySave}
+                  className="flex h-14 items-center justify-center gap-2 rounded-[16px] bg-accent text-[15px] font-bold text-white shadow-[0_8px_24px_rgba(47,128,237,0.45)] transition disabled:opacity-50 active:scale-[0.98]"
+                >
+                  <Save size={18} />
+                  {busySave ? "Salvando..." : routeId ? "Atualizar" : "Salvar rota"}
+                </button>
+                <button
+                  type="button"
+                  onClick={resetPlanner}
+                  className="flex h-14 items-center justify-center gap-2 rounded-[16px] border border-white/20 bg-white/10 text-[15px] font-semibold text-white transition active:bg-white/20"
+                >
+                  <Trash2 size={18} />
+                  Limpar
+                </button>
+              </div>
+            )}
+
+            {/* FEEDBACK */}
+            {feedback ? (
+              <div className="mt-3 flex items-start gap-2.5 rounded-[14px] bg-white/8 px-3 py-3">
+                <CircleAlert size={16} className="mt-0.5 shrink-0 text-accentSoft" />
+                <p className="text-[14px] leading-5 text-white/85">{feedback}</p>
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+      </RouteMapCard>
+
+      {/* ── ROUTE SUGGESTIONS (floating, scrollable) ── */}
+      {routeSuggestions.length > 0 ? (
+        <div className="pointer-events-none absolute inset-x-0 bottom-[calc(180px+env(safe-area-inset-bottom,0px))] z-20 px-3">
+          <div className="pointer-events-auto rounded-[18px] border border-white/10 bg-black/70 p-3 backdrop-blur-md">
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/50">Sugestões na rota</p>
+            <div className="no-scrollbar flex gap-2 overflow-x-auto">
+              {routeSuggestions.map((place) => (
+                <article key={place.id} className="flex shrink-0 w-[160px] flex-col gap-1 rounded-[14px] border border-white/10 bg-white/10 p-2.5">
+                  <div className="flex items-start justify-between gap-1">
+                    <p className="min-w-0 truncate text-[13px] font-semibold text-white">{place.name}</p>
+                    <span className="shrink-0 rounded-full bg-accent/20 px-1.5 py-0.5 text-[10px] font-bold text-accentSoft">
+                      {place.averageRating.toFixed(1)}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-white/50">{ROUTE_SUGGESTION_CATEGORY_LABELS[place.category]}</p>
                   <button
                     type="button"
-                    onClick={() => setFeedback(`${place.name} fica a aproximadamente ${place.detourKm} km do trajeto.`)}
-                    className="h-9 rounded-full border border-border/80 text-xs text-text"
-                  >
-                    Ver no mapa
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setReviewTarget(place);
-                      setReviewRating(5);
-                      setReviewComment("");
-                      setReviewTags([]);
-                    }}
-                    className="h-9 rounded-full bg-accent text-xs font-semibold text-background"
+                    onClick={() => { setReviewTarget(place); setReviewRating(5); setReviewComment(""); setReviewTags([]); }}
+                    className="mt-1 h-7 w-full rounded-full bg-accent text-[11px] font-semibold text-white"
                   >
                     Avaliar
                   </button>
-                </div>
-              </article>
-            ))}
+                </article>
+              ))}
+            </div>
           </div>
-        </section>
+        </div>
       ) : null}
 
+      {/* ── LOGIN ALERT MODAL ── */}
       {showLoginAlert ? (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-[rgba(5,9,14,0.68)] p-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-[24px] border border-white/10 bg-[rgba(11,17,25,0.96)] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.42)]">
-            <p className="text-base font-semibold text-text">Faça login para salvar sua rota</p>
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-[24px] border border-white/15 bg-[rgba(11,17,25,0.97)] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.5)]">
+            <p className="text-[18px] font-semibold text-white">Faça login para salvar sua rota</p>
             <div className="mt-4 flex gap-3">
               <button
                 type="button"
                 onClick={() => setShowLoginAlert(false)}
-                className="inline-flex h-10 flex-1 items-center justify-center rounded-full border border-border/80 bg-background/82 px-4 text-sm font-medium text-text"
+                className="flex h-12 flex-1 items-center justify-center rounded-full border border-white/20 bg-white/10 text-[15px] font-medium text-white"
               >
                 Agora não
               </button>
               <button
                 type="button"
                 onClick={() => router.push("/login")}
-                className="inline-flex h-10 flex-1 items-center justify-center rounded-full bg-accent px-4 text-sm font-semibold text-background"
+                className="flex h-12 flex-1 items-center justify-center rounded-full bg-accent text-[15px] font-bold text-white"
               >
                 Entrar
               </button>
@@ -690,21 +602,19 @@ export function RoutePlannerScreen() {
         </div>
       ) : null}
 
+      {/* ── ADD STOP MODAL ── */}
       {showStopModal ? (
-        <div className="fixed inset-0 z-[82] flex items-end justify-center bg-[rgba(5,9,14,0.68)] p-3 backdrop-blur-sm md:items-center md:p-4">
-          <div className="w-full max-w-md rounded-[26px] border border-white/10 bg-[rgba(11,17,25,0.98)] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.42)]">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <p className="text-base font-semibold text-text">Adicionar parada</p>
+        <div className="fixed inset-0 z-[82] flex items-end justify-center bg-black/70 p-3 backdrop-blur-sm md:items-center md:p-4">
+          <div className="w-full max-w-md rounded-[26px] border border-white/15 bg-[rgba(11,17,25,0.98)] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.5)]">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <p className="text-[18px] font-semibold text-white">Adicionar parada</p>
               <button
                 type="button"
-                onClick={() => {
-                  setShowStopModal(false);
-                  setPendingStop(null);
-                }}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border/80 text-muted"
+                onClick={() => { setShowStopModal(false); setPendingStop(null); }}
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-white/70"
                 aria-label="Fechar"
               >
-                <X size={16} />
+                <X size={18} />
               </button>
             </div>
 
@@ -714,18 +624,15 @@ export function RoutePlannerScreen() {
               onSelect={setPendingStop}
               placeholder="Buscar parada"
               compact
-              icon={<Map size={13} />}
+              icon={<Map size={14} />}
               proximity={userLocation}
             />
 
             <div className="mt-4 grid grid-cols-2 gap-3">
               <button
                 type="button"
-                onClick={() => {
-                  setShowStopModal(false);
-                  setPendingStop(null);
-                }}
-                className="inline-flex h-10 items-center justify-center rounded-full border border-border/80 bg-background/82 px-4 text-sm font-medium text-text"
+                onClick={() => { setShowStopModal(false); setPendingStop(null); }}
+                className="flex h-12 items-center justify-center rounded-full border border-white/20 bg-white/10 text-[15px] font-medium text-white"
               >
                 Cancelar
               </button>
@@ -733,7 +640,7 @@ export function RoutePlannerScreen() {
                 type="button"
                 onClick={confirmStop}
                 disabled={!pendingStop}
-                className="inline-flex h-10 items-center justify-center rounded-full bg-accent px-4 text-sm font-semibold text-background disabled:opacity-50"
+                className="flex h-12 items-center justify-center rounded-full bg-accent text-[15px] font-bold text-white disabled:opacity-50"
               >
                 Confirmar
               </button>
@@ -742,21 +649,22 @@ export function RoutePlannerScreen() {
         </div>
       ) : null}
 
+      {/* ── REVIEW MODAL ── */}
       {reviewTarget ? (
-        <div className="fixed inset-0 z-[84] flex items-end justify-center bg-[rgba(5,9,14,0.68)] p-3 backdrop-blur-sm md:items-center md:p-4">
-          <div className="w-full max-w-md rounded-[26px] border border-white/10 bg-[rgba(11,17,25,0.98)] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.42)]">
+        <div className="fixed inset-0 z-[84] flex items-end justify-center bg-black/70 p-3 backdrop-blur-sm md:items-center md:p-4">
+          <div className="w-full max-w-md rounded-[26px] border border-white/15 bg-[rgba(11,17,25,0.98)] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.5)]">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-base font-semibold text-text">Avaliar parada</p>
-                <p className="mt-1 text-sm text-muted">{reviewTarget.name}</p>
+                <p className="text-[18px] font-semibold text-white">Avaliar parada</p>
+                <p className="mt-0.5 text-[14px] text-white/60">{reviewTarget.name}</p>
               </div>
               <button
                 type="button"
                 onClick={() => setReviewTarget(null)}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border/80 text-muted"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-white/70"
                 aria-label="Fechar avaliação"
               >
-                <X size={16} />
+                <X size={18} />
               </button>
             </div>
 
@@ -766,10 +674,8 @@ export function RoutePlannerScreen() {
                   key={rating}
                   type="button"
                   onClick={() => setReviewRating(rating)}
-                  className={`h-10 flex-1 rounded-full border text-sm font-semibold ${
-                    reviewRating >= rating
-                      ? "border-accent bg-accent text-background"
-                      : "border-border/80 bg-background/82 text-muted"
+                  className={`h-11 flex-1 rounded-full border text-[15px] font-bold transition ${
+                    reviewRating >= rating ? "border-accent bg-accent text-white" : "border-white/20 bg-white/10 text-white/60"
                   }`}
                 >
                   {rating}
@@ -779,26 +685,21 @@ export function RoutePlannerScreen() {
 
             <textarea
               value={reviewComment}
-              onChange={(event) => setReviewComment(event.target.value)}
+              onChange={(e) => setReviewComment(e.target.value)}
               placeholder="Comentário opcional"
-              className="mt-3 min-h-24 w-full rounded-[18px] border border-white/10 bg-background/70 px-3 py-3 text-[16px] text-text outline-none placeholder:text-muted/65 focus:border-accent/80 md:text-sm"
+              className="mt-3 min-h-24 w-full rounded-[18px] border border-white/20 bg-white/10 px-3 py-3 text-[16px] text-white outline-none placeholder:text-white/35 focus:border-accent/70"
             />
 
             <div className="mt-3 flex flex-wrap gap-2">
               {REVIEW_TAGS.map((tag) => {
                 const selected = reviewTags.includes(tag);
-
                 return (
                   <button
                     key={tag}
                     type="button"
-                    onClick={() =>
-                      setReviewTags((current) =>
-                        selected ? current.filter((item) => item !== tag) : [...current, tag]
-                      )
-                    }
-                    className={`rounded-full border px-3 py-2 text-xs ${
-                      selected ? "border-accent bg-accent/15 text-accentSoft" : "border-border/80 text-muted"
+                    onClick={() => setReviewTags((c) => selected ? c.filter((t) => t !== tag) : [...c, tag])}
+                    className={`rounded-full border px-3 py-2 text-[13px] transition ${
+                      selected ? "border-accent bg-accent/15 text-accentSoft" : "border-white/20 text-white/60"
                     }`}
                   >
                     {tag}
@@ -811,14 +712,14 @@ export function RoutePlannerScreen() {
               <button
                 type="button"
                 onClick={() => setReviewTarget(null)}
-                className="inline-flex h-10 items-center justify-center rounded-full border border-border/80 bg-background/82 px-4 text-sm font-medium text-text"
+                className="flex h-12 items-center justify-center rounded-full border border-white/20 bg-white/10 text-[15px] font-medium text-white"
               >
                 Cancelar
               </button>
               <button
                 type="button"
                 onClick={savePlaceRating}
-                className="inline-flex h-10 items-center justify-center rounded-full bg-accent px-4 text-sm font-semibold text-background"
+                className="flex h-12 items-center justify-center rounded-full bg-accent text-[15px] font-bold text-white"
               >
                 Salvar avaliação
               </button>

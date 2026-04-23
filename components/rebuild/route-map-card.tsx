@@ -1,7 +1,6 @@
 "use client";
 
-import { Clock3, Milestone, Radar } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { RoutePreview } from "@/lib/rebuild/types";
 
@@ -25,7 +24,6 @@ type GoogleMapsConfig = {
 };
 
 const DEFAULT_CENTER = { lat: -25.4284, lng: -49.2733 };
-
 
 function markerColor(kind: WaypointKind): string {
   if (kind === "origin") return "#4ade80";
@@ -75,15 +73,6 @@ function removeMarker(marker: any) {
   }
 }
 
-function formatDuration(durationMinutes: number | null) {
-  if (!durationMinutes || durationMinutes <= 0) return "—";
-  const hours = Math.floor(durationMinutes / 60);
-  const minutes = durationMinutes % 60;
-  if (hours === 0) return `${minutes} min`;
-  if (minutes === 0) return `${hours}h`;
-  return `${hours}h ${minutes}min`;
-}
-
 export function RouteMapCard({
   preview,
   hasRoutePoints,
@@ -102,33 +91,6 @@ export function RouteMapCard({
   const polylinesRef = useRef<any[]>([]);
   const currentLocationMarkerRef = useRef<any>(null);
   const [mapReady, setMapReady] = useState(false);
-
-  const stats = useMemo(
-    () =>
-      preview
-        ? [
-            {
-              label: "Distância",
-              value: preview.distanceKm ? `${preview.distanceKm} km` : "—",
-              icon: Milestone
-            },
-            {
-              label: "Tempo",
-              value: formatDuration(preview.durationMinutes),
-              icon: Clock3
-            }
-          ]
-        : [],
-    [preview]
-  );
-
-  const routeBadge = preview
-    ? preview.provider === "mapbox"
-      ? "Trajeto por estrada"
-      : preview.provider === "osrm"
-        ? "Trajeto viário"
-        : "Modo básico"
-    : null;
 
   useEffect(() => {
     let cancelled = false;
@@ -287,10 +249,10 @@ export function RouteMapCard({
       const bounds = new gm.LatLngBounds();
       pointsToFit.forEach((p) => bounds.extend({ lat: p.lat, lng: p.lng }));
       map.fitBounds(bounds, {
-        top: 120,
-        right: 28,
-        bottom: preview ? 120 : 40,
-        left: 28
+        top: 320,
+        right: 32,
+        bottom: preview ? 320 : 200,
+        left: 32
       });
     } else if (pointsToFit.length === 1) {
       map.panTo({ lat: pointsToFit[0].lat, lng: pointsToFit[0].lng });
@@ -349,42 +311,9 @@ export function RouteMapCard({
   }, [hasRoutePoints, mapReady]);
 
   return (
-    <section className="relative overflow-hidden rounded-[30px] bg-[linear-gradient(180deg,rgba(11,18,27,0.9)_0%,rgba(8,13,20,0.96)_100%)] shadow-[0_24px_80px_rgba(0,0,0,0.4)]">
-      <div className="relative min-h-[32rem] overflow-hidden rounded-[30px] bg-background md:min-h-[38rem]">
-        <div ref={mapContainerRef} className="absolute inset-0 z-0" />
-
-        <div className="pointer-events-none absolute inset-0 z-10 bg-[linear-gradient(180deg,rgba(7,12,18,0.1)_0%,rgba(7,12,18,0.02)_36%,rgba(7,12,18,0.26)_100%)]" />
-
-        {children ? (
-          <div className="pointer-events-none absolute inset-x-2 top-2 z-30 md:left-4 md:right-auto md:top-4 md:w-[26rem]">
-            {children}
-          </div>
-        ) : null}
-
-        {preview ? (
-          <div className="pointer-events-none absolute bottom-3 left-3 right-3 z-20 rounded-[22px] border border-white/10 bg-[rgba(9,14,22,0.58)] p-3 backdrop-blur-md md:left-auto md:right-4 md:w-[24rem]">
-            <div className="mb-2 flex items-center justify-between gap-3">
-              <p className="text-[11px] uppercase tracking-[0.16em] text-muted">{routeBadge}</p>
-              {preview.live ? <Radar size={14} className="text-accentSoft" /> : null}
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {stats.map((stat) => {
-                const Icon = stat.icon;
-
-                return (
-                  <div key={stat.label} className="rounded-[16px] bg-[rgba(255,255,255,0.08)] px-3 py-3">
-                    <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.14em] text-muted">
-                      <Icon size={13} />
-                      <span>{stat.label}</span>
-                    </div>
-                    <p className="mt-2 text-sm font-semibold text-text">{stat.value}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ) : null}
-      </div>
-    </section>
+    <div className="relative h-full w-full overflow-hidden bg-[#e8e8e8]">
+      <div ref={mapContainerRef} className="absolute inset-0 z-0" />
+      {children}
+    </div>
   );
 }
