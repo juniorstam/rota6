@@ -1,6 +1,8 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@import "mapbox-gl/dist/mapbox-gl.css";
+@import "leaflet/dist/leaflet.css";
 
 :root {
   color-scheme: dark;
@@ -54,6 +56,14 @@ select {
   font: inherit;
 }
 
+@media (max-width: 767px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -77,4 +87,11 @@ select {
   width: 100%;
   max-width: 28rem;
   padding: 1rem;
+}
+
+@media (min-width: 768px) {
+  .mobile-frame {
+    max-width: 72rem;
+    padding: 1.5rem 2rem;
+  }
 }

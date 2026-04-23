@@ -18,21 +18,22 @@ export function MobileNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-4 left-1/2 z-50 w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 rounded-[18px] border border-border/80 bg-surface/95 p-2 shadow-glow backdrop-blur-xl md:hidden">
-      <div className="grid grid-cols-5 gap-1">
+    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-[rgba(10,16,24,0.92)] px-2 pb-[max(0.35rem,env(safe-area-inset-bottom))] pt-1 shadow-[0_-16px_36px_rgba(0,0,0,0.28)] backdrop-blur-xl md:hidden">
+      <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
         {items.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(`${href}/`);
           return (
             <Link
               key={href}
               href={href}
+              aria-label={label}
+              title={label}
               className={cn(
-                "flex flex-col items-center gap-1 rounded-[12px] px-2 py-2 text-[11px] transition",
-                active ? "bg-accent text-background" : "text-muted"
+                "flex h-11 items-center justify-center rounded-full transition",
+                active ? "bg-accent text-background shadow-[0_10px_30px_rgba(47,128,237,0.32)]" : "text-muted"
               )}
             >
-              <Icon size={18} />
-              <span>{label}</span>
+              <Icon size={18} strokeWidth={2.1} />
             </Link>
           );
         })}

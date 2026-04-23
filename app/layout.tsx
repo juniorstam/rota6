@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { MobileNav } from "@/components/mobile-nav";
 import { RebuildHeader } from "@/components/rebuild/rebuild-header";
 import { AuthProvider } from "@/providers/auth-provider";
 import { FavoritesProvider } from "@/providers/favorites-provider";
@@ -21,7 +22,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <FavoritesProvider>
               <div className="app-shell">
                 <RebuildHeader />
-                <main className="mobile-frame pb-10">{children}</main>
+                <main className="mobile-frame pb-24">{children}</main>
+                <MobileNav />
               </div>
             </FavoritesProvider>
           </FollowingProvider>

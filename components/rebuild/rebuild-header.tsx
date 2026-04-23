@@ -9,7 +9,7 @@ export function RebuildHeader() {
   const { user, loading, logout } = useAuth();
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border/80 bg-background/90 backdrop-blur">
+    <header className="hidden border-b border-border/80 bg-background/90 backdrop-blur md:block">
       <div className="mobile-frame flex items-center justify-between gap-3 py-3">
         <Link href="/" className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-[12px] border border-accent/30 bg-surface text-accent">

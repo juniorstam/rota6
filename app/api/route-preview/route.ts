@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { buildRoutePreview } from "@/lib/rebuild/mapbox";
 import { RoutePayload } from "@/lib/rebuild/types";
+import { calculateRoutePreview } from "@/lib/route/route-service";
 
 export async function POST(request: NextRequest) {
   const body = (await request.json()) as RoutePayload;
@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const preview = await buildRoutePreview(body);
+    const preview = await calculateRoutePreview(body);
     return NextResponse.json(preview);
   } catch (error) {
     return NextResponse.json(

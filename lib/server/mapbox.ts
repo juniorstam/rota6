@@ -1,7 +1,7 @@
 import { places } from "@/lib/mock-data";
 import { Place, PlaceSearchResult, RouteRequest, RouteResult, RouteSuggestion } from "@/lib/types";
 
-const MAPBOX_TOKEN = process.env.MAPBOX_ACCESS_TOKEN;
+const MAPBOX_TOKEN = process.env.MAPBOX_ACCESS_TOKEN ?? process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 const MAPBOX_STYLE_ID = process.env.MAPBOX_STYLE_ID ?? "dark-v11";
 const MAPBOX_STYLE_OWNER = process.env.MAPBOX_STYLE_OWNER ?? "mapbox";
 
@@ -36,6 +36,10 @@ interface MapboxDirectionsResponse {
   waypoints?: RouteWaypoint[];
 }
 
+interface NominatimReverseFeature {
+  display_name?: string;
+}
+
 function hasMapboxToken() {
   return Boolean(MAPBOX_TOKEN);
 }
@@ -52,6 +56,23 @@ async function mapboxFetch<T>(url: string): Promise<T> {
 
   if (!response.ok) {
     throw new Error(`Mapbox request failed with status ${response.status}`);
+  }
+
+  return (await response.json()) as T;
+}
+
+async function nominatimFetch<T>(url: string): Promise<T> {
+  const response = await fetch(url, {
+    headers: {
+      Accept: "application/json",
+      "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
+      "User-Agent": "Rota6/1.0 (reverse geocoding fallback)"
+    },
+    next: { revalidate: 0 }
+  });
+
+  if (!response.ok) {
+    throw new Error(`Nominatim request failed with status ${response.status}`);
   }
 
   return (await response.json()) as T;
@@ -258,7 +279,13 @@ export async function searchPlaces(query: string): Promise<PlaceSearchResult[]> 
 
 export async function reverseGeocode(latitude: number, longitude: number) {
   if (!hasMapboxToken()) {
-    return `Minha posição (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
+    try {
+      const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`;
+      const response = await nominatimFetch<NominatimReverseFeature>(url);
+      return response.display_name ?? `Minha posição (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
+    } catch {
+      return `Minha posição (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
+    }
   }
 
   const url = `https://api.mapbox.com/search/geocode/v6/reverse?longitude=${longitude}&latitude=${latitude}&language=pt-BR&access_token=${MAPBOX_TOKEN}`;

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { searchLocations } from "@/lib/rebuild/mapbox";
+import { suggestHybridLocations } from "@/lib/search/hybrid-search";
 
 export async function GET(request: NextRequest) {
   const query = request.nextUrl.searchParams.get("q")?.trim() ?? "";
@@ -10,7 +10,10 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const places = await searchLocations(query);
+    const places = await suggestHybridLocations({
+      query,
+      sessionToken: crypto.randomUUID()
+    });
     return NextResponse.json(places);
   } catch (error) {
     return NextResponse.json(
