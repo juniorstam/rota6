@@ -511,7 +511,7 @@ export function RoutePlannerScreen() {
                   onClick={swapOriginAndDestination}
                   className="text-[12px] font-semibold text-white/50 transition hover:text-white/80"
                 >
-                  ⇅ inverter origem e destino
+                  &#8645; inverter origem e destino
                 </button>
               </div>
             ) : null}
@@ -528,17 +528,11 @@ export function RoutePlannerScreen() {
                   <article key={place.id} className="flex shrink-0 w-[160px] flex-col overflow-hidden rounded-[14px] border border-white/10 bg-white/10">
                     {/* Imagem placeholder com categoria como fundo colorido */}
                     <div className="relative h-[80px] w-full overflow-hidden bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center">
-                      <span className="text-[28px]">
-                        {place.category === "restaurant" ? "🍽️"
-                          : place.category === "cafe" ? "☕"
-                          : place.category === "bar" ? "🍺"
-                          : place.category === "fuel" ? "⛽"
-                          : place.category === "hotel" ? "🏨"
-                          : place.category === "repair" ? "🔧"
-                          : "🏔️"}
+                      <span className="text-[11px] font-bold uppercase tracking-wide text-white/60 px-2 text-center">
+                        {ROUTE_SUGGESTION_CATEGORY_LABELS[place.category]}
                       </span>
                       <span className="absolute top-1.5 right-1.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                        ⭐ {place.averageRating.toFixed(1)}
+                        &#11088; {place.averageRating.toFixed(1)}
                       </span>
                     </div>
                     <div className="flex flex-1 flex-col gap-1 p-2.5">
@@ -598,7 +592,7 @@ export function RoutePlannerScreen() {
                           </div>
                           {index < legPoints.length - 1 ? (
                             <div className="flex shrink-0 flex-col items-center gap-0.5">
-                              <span className="text-[14px] leading-none text-white/30">→</span>
+                              <span className="text-[14px] leading-none text-white/30">&rarr;</span>
                               {legDistances[index] != null && (
                                 <span className="text-[9px] font-semibold text-white/40 leading-none">
                                   {legDistances[index].toLocaleString("pt-BR", { maximumFractionDigits: 0 })} km
@@ -726,7 +720,7 @@ export function RoutePlannerScreen() {
                 onClick={() => openNavigationApp("google")}
                 className="flex h-14 w-full items-center gap-4 rounded-[18px] border border-white/10 bg-white/10 px-4 text-left transition active:bg-white/20"
               >
-                <span className="text-[28px]">🗺️</span>
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#4285F4] text-white text-[13px] font-bold">G</div>
                 <div>
                   <p className="text-[15px] font-bold text-white">Google Maps</p>
                   <p className="text-[12px] text-white/50">Suporta múltiplas paradas</p>
@@ -738,10 +732,10 @@ export function RoutePlannerScreen() {
                 onClick={() => openNavigationApp("waze")}
                 className="flex h-14 w-full items-center gap-4 rounded-[18px] border border-white/10 bg-white/10 px-4 text-left transition active:bg-white/20"
               >
-                <span className="text-[28px]">🚗</span>
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#33CCFF] text-white text-[13px] font-bold">W</div>
                 <div>
                   <p className="text-[15px] font-bold text-white">Waze</p>
-                  <p className="text-[12px] text-white/50">Origem → destino direto</p>
+                  <p className="text-[12px] text-white/50">Origem &rarr; destino direto</p>
                 </div>
               </button>
             </div>
@@ -1014,7 +1008,7 @@ export function RoutePlannerScreen() {
                   onClick={swapOriginAndDestination}
                   className="text-[12px] font-semibold text-white/50 transition hover:text-white/80"
                 >
-                  ⇅ inverter origem e destino
+                  &#8645; inverter origem e destino
                 </button>
               </div>
             ) : null}
@@ -1070,7 +1064,7 @@ export function RoutePlannerScreen() {
                         </p>
                       </div>
                       {index < legPoints.length - 1 ? (
-                        <span className="shrink-0 text-[16px] leading-none text-white/30">→</span>
+                        <span className="shrink-0 text-[16px] leading-none text-white/30">&rarr;</span>
                       ) : null}
                     </Fragment>
                   ))}
