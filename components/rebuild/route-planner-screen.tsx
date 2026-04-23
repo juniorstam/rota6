@@ -398,7 +398,7 @@ export function RoutePlannerScreen() {
 
       {/* ── TOP PANEL — fixo no topo ── */}
       <div className="pointer-events-auto relative z-20 w-full p-3 pb-0 md:p-4 md:pb-0">
-        <div className="overflow-hidden rounded-[22px] border border-white/15 bg-black/80 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+        <div className="overflow-visible rounded-[22px] border border-white/15 bg-black/80 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-xl">
 
             {/* Handle retrátil */}
             <button
@@ -655,6 +655,27 @@ export function RoutePlannerScreen() {
                   <Navigation size={18} />
                   Iniciar navegação
                 </button>
+
+                {/* Adicionar parada + Recalcular */}
+                <div className="flex gap-2.5">
+                  <button
+                    type="button"
+                    onClick={handleAddStop}
+                    className="flex h-10 flex-1 items-center justify-center gap-2 rounded-full border border-white/25 bg-white/10 text-[14px] font-semibold text-white transition active:bg-white/20"
+                  >
+                    <Plus size={15} />
+                    <span className="truncate">+ Parada</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={calculateRoute}
+                    disabled={busyPreview}
+                    className="flex h-10 flex-1 items-center justify-center gap-2 rounded-full border border-white/25 bg-white/10 text-[14px] font-semibold text-white transition disabled:opacity-50 active:bg-white/20"
+                  >
+                    {busyPreview ? <LoaderCircle size={15} className="animate-spin" /> : <ArrowRight size={15} />}
+                    <span className="truncate">{busyPreview ? "Calculando..." : "Recalcular"}</span>
+                  </button>
+                </div>
 
                 {/* Salvar + Limpar */}
                 <div className="flex gap-2.5">
