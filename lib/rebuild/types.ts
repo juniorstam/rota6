@@ -76,6 +76,9 @@ export interface RouteSuggestion {
 export interface RouteRecord {
   id: string;
   userId: string;
+  name?: string | null;
+  isPublic?: boolean;
+  stopsCount?: number;
   origin: RoutePoint;
   destination: RoutePoint;
   distanceKm: number | null;
@@ -91,4 +94,5 @@ export interface RoutePayload {
   distanceKm: number | null;
   durationMinutes: number | null;
   stops: RouteStopInput[];
+  name?: string | null;
 }
